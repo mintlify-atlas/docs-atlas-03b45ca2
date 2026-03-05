@@ -1,0 +1,179 @@
+---
+title: "@empathyco/x-adapter-platform"
+description: "Search client for the Empathy Platform API"
+---
+
+## Overview
+
+`@empathyco/x-adapter-platform` is a pre-built adapter that provides a complete client for the Empathy Platform search API. It implements the adapter pattern from `@empathyco/x-adapter` with all the endpoint configurations needed to connect Interface X to Empathy's search services.
+
+## Installation
+
+<CodeGroup>
+
+```bash npm
+npm install @empathyco/x-adapter-platform
+```
+
+```bash pnpm
+pnpm add @empathyco/x-adapter-platform
+```
+
+```bash yarn
+yarn add @empathyco/x-adapter-platform
+```
+
+</CodeGroup>
+
+## Basic Usage
+
+```typescript
+import { platformAdapter } from '@empathyco/x-adapter-platform';
+import { XInstaller } from '@empathyco/x-components';
+
+// Configure the platform adapter
+const adapter = platformAdapter({
+  env: 'staging',
+  instance: 'your-instance-id',
+  lang: 'en',
+  consent: true
+});
+
+// Install with X Components
+const installer = new XInstaller({
+  adapter,
+  domElement: '#app',
+  xModules: {
+    // Your module configuration
+  }
+});
+
+installer.init();
+```
+
+## Configuration
+
+<ParamField path="env" type="string" default="'live'">
+  Environment to connect to. Options: `'staging'`, `'live'`
+</ParamField>
+
+<ParamField path="instance" type="string" required>
+  Your Empathy Platform instance identifier
+</ParamField>
+
+<ParamField path="lang" type="string" default="'en'">
+  Language code for search results (e.g., 'en', 'es', 'fr')
+</ParamField>
+
+<ParamField path="consent" type="boolean" default="false">
+  Whether user has given consent for tracking
+</ParamField>
+
+<ParamField path="documentId" type="string">
+  Optional document ID for tracking
+</ParamField>
+
+<ParamField path="uiLang" type="string">
+  Optional UI language (defaults to `lang` value)
+</ParamField>
+
+## Supported Endpoints
+
+The platform adapter provides pre-configured endpoints for:
+
+- **Search** - Main search query endpoint
+- **Query Suggestions** - Autocomplete suggestions
+- **Popular Searches** - Trending search queries
+- **Recommendations** - Product recommendations
+- **Next Queries** - Related search suggestions
+- **Related Tags** - Tag-based refinements
+- **Identifier Results** - SKU/model number search
+- **Semantic Queries** - AI-powered alternative queries
+- **Experience Controls** - Feature flags and configuration
+- **Tagging** - Analytics event tracking
+
+## Advanced Configuration
+
+### Custom Base URL
+
+```typescript
+import { platformAdapter } from '@empathyco/x-adapter-platform';
+
+const adapter = platformAdapter({
+  env: 'staging',
+  instance: 'your-instance',
+  lang: 'en',
+  // Override base URL
+  baseUrl: 'https://custom-domain.empathy.co'
+});
+```
+
+### Response Interceptors
+
+```typescript
+import { platformAdapter } from '@empathyco/x-adapter-platform';
+
+const adapter = platformAdapter({
+  env: 'live',
+  instance: 'your-instance',
+  lang: 'en'
+});
+
+// Add custom response transformation
+const customAdapter = {
+  ...adapter,
+  search: async (request) => {
+    const response = await adapter.search(request);
+    // Custom transformation
+    return {
+      ...response,
+      results: response.results.map(result => ({
+        ...result,
+        customField: 'custom value'
+      }))
+    };
+  }
+};
+```
+
+## TypeScript Support
+
+The adapter is fully typed and exports interfaces for all request and response types:
+
+```typescript
+import type { 
+  SearchRequest, 
+  SearchResponse,
+  PlatformAdapterConfig 
+} from '@empathyco/x-adapter-platform';
+
+const config: PlatformAdapterConfig = {
+  env: 'staging',
+  instance: 'my-instance',
+  lang: 'en',
+  consent: true
+};
+```
+
+## Dependencies
+
+- `@empathyco/x-adapter` - Base adapter utilities
+- `@empathyco/x-types` - TypeScript type definitions
+- `@empathyco/x-utils` - Shared utilities
+
+## Related Resources
+
+<CardGroup cols={2}>
+  <Card title="x-adapter" icon="plug" href="/api/x-adapter">
+    Base adapter pattern and utilities
+  </Card>
+  <Card title="Platform Integration" icon="server" href="/integration/platform-adapter">
+    Integration guide for Empathy Platform
+  </Card>
+  <Card title="Custom API" icon="code" href="/integration/custom-api">
+    Creating custom API adapters
+  </Card>
+  <Card title="x-components" icon="cube" href="/api/x-components">
+    Main component library
+  </Card>
+</CardGroup>

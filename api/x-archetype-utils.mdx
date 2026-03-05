@@ -1,0 +1,182 @@
+---
+title: "@empathyco/x-archetype-utils"
+description: "Utilities for building Interface X Archetype applications"
+---
+
+## Overview
+
+`@empathyco/x-archetype-utils` provides utility functions and helpers specifically designed for building applications with the [X Archetype](https://github.com/empathyco/x-archetype). It includes internationalization helpers, configuration utilities, and composables that simplify common archetype patterns.
+
+<Note>
+This package is primarily intended for use with X Archetype projects. If you're building a custom Interface X integration, you may not need this package.
+</Note>
+
+## Installation
+
+<CodeGroup>
+
+```bash npm
+npm install @empathyco/x-archetype-utils
+```
+
+```bash pnpm
+pnpm add @empathyco/x-archetype-utils
+```
+
+```bash yarn
+yarn add @empathyco/x-archetype-utils
+```
+
+</CodeGroup>
+
+## Main Exports
+
+### Internationalization (i18n)
+
+Vue i18n integration utilities for multilingual search experiences:
+
+```typescript
+import { createI18n, loadMessages } from '@empathyco/x-archetype-utils';
+
+// Create i18n instance
+const i18n = createI18n({
+  locale: 'en',
+  fallbackLocale: 'en'
+});
+
+// Load translation messages
+await loadMessages(i18n, ['en', 'es', 'fr']);
+```
+
+### Configuration Utilities
+
+Helpers for managing archetype configuration:
+
+```typescript
+import { 
+  mergeConfig, 
+  validateConfig,
+  getConfigValue 
+} from '@empathyco/x-archetype-utils';
+
+// Merge user config with defaults
+const config = mergeConfig(defaultConfig, userConfig);
+
+// Validate configuration structure
+const isValid = validateConfig(config);
+
+// Get nested config value safely
+const value = getConfigValue(config, 'search.debounce', 300);
+```
+
+### Vue Composables
+
+Reusable composition functions for Vue 3:
+
+```typescript
+import { 
+  useDevice,
+  useBreakpoint,
+  useLocalStorage 
+} from '@empathyco/x-archetype-utils';
+
+// Detect device type
+const { isMobile, isTablet, isDesktop } = useDevice();
+
+// Responsive breakpoints
+const { isXs, isSm, isMd, isLg, isXl } = useBreakpoint();
+
+// Persistent local storage
+const [value, setValue] = useLocalStorage('key', defaultValue);
+```
+
+## Peer Dependencies
+
+<ParamField path="vue" type="^3.5.28" required>
+  Vue 3 framework
+</ParamField>
+
+<ParamField path="vue-i18n" type="^9.14.5" required>
+  Vue i18n for internationalization
+</ParamField>
+
+## Usage with X Archetype
+
+This package is designed to work seamlessly with X Archetype:
+
+```typescript
+import { createApp } from 'vue';
+import { XInstaller } from '@empathyco/x-components';
+import { 
+  createI18n, 
+  loadMessages,
+  mergeConfig 
+} from '@empathyco/x-archetype-utils';
+import App from './App.vue';
+import archetypeConfig from './config';
+
+// Setup i18n
+const i18n = createI18n({
+  locale: 'en',
+  fallbackLocale: 'en'
+});
+
+await loadMessages(i18n, ['en', 'es']);
+
+// Merge with default configuration
+const config = mergeConfig(defaultConfig, archetypeConfig);
+
+// Create Vue app
+const app = createApp(App);
+app.use(i18n);
+
+// Install X Components
+const installer = new XInstaller({
+  adapter: config.adapter,
+  domElement: '#app',
+  xModules: config.xModules
+});
+
+installer.init();
+app.mount('#app');
+```
+
+## TypeScript Support
+
+Fully typed with TypeScript definitions:
+
+```typescript
+import type { 
+  ArchetypeConfig,
+  I18nConfig,
+  DeviceInfo,
+  Breakpoint 
+} from '@empathyco/x-archetype-utils';
+
+const config: ArchetypeConfig = {
+  // Configuration with full type support
+};
+```
+
+## Dependencies
+
+- `@empathyco/x-deep-merge` - Deep object merging
+- `@empathyco/x-utils` - Shared utilities
+- `vue-i18n` - Vue internationalization
+
+## Related Resources
+
+<CardGroup cols={2}>
+  <Card title="X Archetype" icon="layer-group" href="https://github.com/empathyco/x-archetype">
+    Complete archetype project
+  </Card>
+  <Card title="x-components" icon="cube" href="/api/x-components">
+    Core component library
+  </Card>
+  <Card title="x-utils" icon="wrench" href="/api/x-utils">
+    General utility functions
+  </Card>
+  <Card title="Installation" icon="download" href="/installation">
+    Getting started guide
+  </Card>
+</CardGroup>

@@ -1,0 +1,217 @@
+---
+title: "@empathyco/x-design-system"
+description: "Tailwind CSS-based design system for Interface X"
+---
+
+## Overview
+
+`@empathyco/x-design-system` is a pre-built CSS design system built with Tailwind CSS v4. It provides a complete set of design tokens, component styles, and utility classes optimized for Interface X search experiences.
+
+<Note>
+This package uses Tailwind CSS v4. For projects using Tailwind v3, use `@empathyco/x-tailwindcss` instead.
+</Note>
+
+## Installation
+
+<CodeGroup>
+
+```bash npm
+npm install @empathyco/x-design-system
+```
+
+```bash pnpm
+pnpm add @empathyco/x-design-system
+```
+
+```bash yarn
+yarn add @empathyco/x-design-system
+```
+
+</CodeGroup>
+
+## Basic Usage
+
+Import the design system CSS in your application:
+
+```typescript
+import '@empathyco/x-design-system';
+```
+
+Or in your main CSS file:
+
+```css
+@import '@empathyco/x-design-system';
+```
+
+## Features
+
+### Design Tokens
+
+The design system includes comprehensive design tokens:
+
+- **Colors** - Semantic color palette with light/dark mode support
+- **Typography** - Font scales, weights, and line heights
+- **Spacing** - Consistent spacing scale
+- **Border Radius** - Rounded corner utilities
+- **Shadows** - Elevation and depth
+- **Z-Index** - Layering utilities
+
+### Component Styles
+
+Pre-styled classes for Interface X components:
+
+- Search inputs and buttons
+- Suggestion lists
+- Result cards
+- Facet filters
+- Modals and panels
+- Tags and badges
+
+### Responsive Design
+
+Mobile-first responsive utilities with breakpoints:
+
+- **xs**: 0px
+- **sm**: 640px
+- **md**: 768px
+- **lg**: 1024px
+- **xl**: 1280px
+- **2xl**: 1536px
+
+## Using with Vue
+
+```vue
+<template>
+  <div class="x-search-box">
+    <input 
+      class="x-search-input" 
+      type="search" 
+      placeholder="Search products..."
+    />
+    <button class="x-search-button">
+      Search
+    </button>
+  </div>
+</template>
+
+<style>
+@import '@empathyco/x-design-system';
+</style>
+```
+
+## Customization
+
+### CSS Variables
+
+Customize design tokens using CSS variables:
+
+```css
+:root {
+  --x-color-primary: #94cb04;
+  --x-color-secondary: #545454;
+  --x-font-family: 'Inter', sans-serif;
+  --x-border-radius: 8px;
+}
+```
+
+### Dark Mode
+
+The design system includes automatic dark mode support:
+
+```css
+@media (prefers-color-scheme: dark) {
+  :root {
+    --x-color-bg: #1a1a1a;
+    --x-color-text: #ffffff;
+  }
+}
+```
+
+Or use class-based dark mode:
+
+```html
+<div class="dark">
+  <!-- Dark mode styles applied -->
+</div>
+```
+
+## Comparison with x-tailwindcss
+
+| Feature | x-design-system | x-tailwindcss |
+|---------|----------------|---------------|
+| Tailwind Version | v4 | v3 |
+| Format | CSS only | Tailwind plugin |
+| Customization | CSS variables | Tailwind config |
+| Build Step | None | Required |
+| Bundle Size | Smaller | Larger (full Tailwind) |
+
+**Use x-design-system when:**
+- You want a pre-built CSS solution
+- You're using Tailwind v4
+- You don't need extensive customization
+
+**Use x-tailwindcss when:**
+- You need full Tailwind configurability  
+- You're using Tailwind v3
+- You want to build a custom design system
+
+## Component Classes
+
+### Search Components
+
+```css
+.x-search-box { /* Search container */ }
+.x-search-input { /* Search input field */ }
+.x-search-button { /* Search button */ }
+.x-search-clear { /* Clear button */ }
+```
+
+### Results
+
+```css
+.x-result-card { /* Result card */ }
+.x-result-image { /* Result image */ }
+.x-result-title { /* Result title */ }
+.x-result-price { /* Result price */ }
+```
+
+### Suggestions
+
+```css
+.x-suggestion-list { /* Suggestion container */ }
+.x-suggestion-item { /* Individual suggestion */ }
+.x-suggestion-highlight { /* Highlighted text */ }
+```
+
+### Facets
+
+```css
+.x-facet-group { /* Facet container */ }
+.x-facet-filter { /* Filter option */ }
+.x-facet-checkbox { /* Checkbox input */ }
+```
+
+## TypeScript Support
+
+The package exports type definitions for CSS module integration:
+
+```typescript
+import type { DesignSystemTokens } from '@empathyco/x-design-system';
+```
+
+## Related Resources
+
+<CardGroup cols={2}>
+  <Card title="x-tailwindcss" icon="palette" href="/api/x-tailwindcss">
+    Tailwind v3 plugin alternative
+  </Card>
+  <Card title="Design System" icon="paintbrush" href="/styling/design-system">
+    Design system documentation
+  </Card>
+  <Card title="Customization" icon="sliders" href="/styling/customization">
+    Customization guide
+  </Card>
+  <Card title="x-components" icon="cube" href="/api/x-components">
+    Component library
+  </Card>
+</CardGroup>

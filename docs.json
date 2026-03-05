@@ -116,9 +116,12 @@
             "pages": [
               "api/x-components",
               "api/x-adapter",
+              "api/x-adapter-platform",
               "api/x-types",
               "api/x-tailwindcss",
-              "api/x-utils"
+              "api/x-design-system",
+              "api/x-utils",
+              "api/x-archetype-utils"
             ]
           },
           {
