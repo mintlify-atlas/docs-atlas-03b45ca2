@@ -1,0 +1,156 @@
+{
+  "projectType": "frontend",
+  "projectName": "Interface X",
+  "projectDescription": "Commerce Search & Discovery frontend web components library for Vue.js",
+  "theme": "palm",
+  "primaryColor": "#94cb04",
+  "lightColor": "#545454",
+  "darkColor": null,
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/architecture",
+              "concepts/x-modules",
+              "concepts/event-system",
+              "concepts/state-management"
+            ]
+          },
+          {
+            "group": "Search Components",
+            "pages": [
+              "components/search-box",
+              "components/search-results",
+              "components/facets",
+              "components/query-suggestions"
+            ]
+          },
+          {
+            "group": "Discovery Components",
+            "pages": [
+              "components/recommendations",
+              "components/popular-searches",
+              "components/next-queries",
+              "components/related-tags",
+              "components/queries-preview"
+            ]
+          },
+          {
+            "group": "Personalization",
+            "pages": [
+              "components/history-queries",
+              "components/empathize",
+              "components/identifier-results"
+            ]
+          },
+          {
+            "group": "UI Components",
+            "pages": [
+              "components/base-components",
+              "components/animations",
+              "components/scroll",
+              "components/modals-panels"
+            ]
+          },
+          {
+            "group": "Styling & Theming",
+            "pages": [
+              "styling/design-system",
+              "styling/tailwind-plugin",
+              "styling/customization"
+            ]
+          },
+          {
+            "group": "Integration",
+            "pages": [
+              "integration/adapters",
+              "integration/platform-adapter",
+              "integration/custom-api"
+            ]
+          },
+          {
+            "group": "Advanced",
+            "pages": [
+              "advanced/url-management",
+              "advanced/tagging",
+              "advanced/experience-controls",
+              "advanced/semantic-queries"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Packages",
+            "pages": [
+              "api/x-components",
+              "api/x-adapter",
+              "api/x-types",
+              "api/x-tailwindcss",
+              "api/x-utils"
+            ]
+          },
+          {
+            "group": "X Modules",
+            "pages": [
+              "api/modules/search",
+              "api/modules/facets",
+              "api/modules/recommendations",
+              "api/modules/history-queries",
+              "api/modules/tagging",
+              "api/modules/url"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Vue.js-based component library for commerce search experiences",
+    "Modular architecture with independent X Modules for different features",
+    "Event-driven system for component communication",
+    "Adapter pattern for connecting to any search API",
+    "Built-in Tailwind CSS design system builder",
+    "Search box with suggestions and predictive layer",
+    "Faceted search with filters",
+    "Product recommendations and discovery",
+    "Query history and personalization",
+    "URL state management",
+    "Privacy-first tagging and analytics",
+    "Accessibility support"
+  ],
+  "publicApiSurface": [
+    "@empathyco/x-components - Main Vue component library",
+    "@empathyco/x-adapter - API adapter utilities",
+    "@empathyco/x-adapter-platform - Empathy Platform adapter",
+    "@empathyco/x-types - TypeScript types and models",
+    "@empathyco/x-tailwindcss - Tailwind design system plugin",
+    "@empathyco/x-utils - Utility functions",
+    "@empathyco/x-archetype-utils - Archetype utilities",
+    "SearchBox - Search input component",
+    "Facets - Filtering component",
+    "Recommendations - Product recommendations",
+    "QuerySuggestions - Search suggestions",
+    "HistoryQueries - Search history",
+    "PopularSearches - Trending searches",
+    "NextQueries - Related searches",
+    "IdentifierResults - Identifier-based results",
+    "Empathize - Predictive layer",
+    "UrlHandler - URL state management",
+    "Tagging - Event tracking"
+  ]
+}
