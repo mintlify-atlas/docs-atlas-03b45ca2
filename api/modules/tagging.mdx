@@ -1,0 +1,514 @@
+---
+title: 'Tagging Module'
+description: 'Analytics and event tracking functionality'
+icon: 'chart-line'
+---
+
+## Overview
+
+The Tagging module handles analytics tracking and event tagging for user interactions. It manages user consent, session tracking, query tagging, and integration with analytics platforms for search behavior analysis.
+
+## State
+
+The Tagging module maintains the following state:
+
+<ResponseField name="consent" type="boolean | null">
+  User consent status for tracking (null = not set, true = granted, false = denied)
+</ResponseField>
+
+<ResponseField name="noResultsTaggingEnabled" type="boolean">
+  Whether no-results events should be tracked
+</ResponseField>
+
+<ResponseField name="queryTaggingInfo" type="TaggingRequest | null">
+  Current query tagging information from search response
+</ResponseField>
+
+<ResponseField name="toolingTaggingInfo" type="ToolingTaggingInfo">
+  Tracking info for tooling events (display, add to cart)
+</ResponseField>
+
+<ResponseField name="config" type="TaggingConfig">
+  Module configuration options
+</ResponseField>
+
+## Configuration
+
+<ParamField path="sessionTTLMs" type="number" default="1800000">
+  Session time-to-live in milliseconds (default: 30 minutes)
+</ParamField>
+
+<ParamField path="queryTaggingDebounceMs" type="number" default="2000">
+  Debounce time before sending query tagging events
+</ParamField>
+
+<ParamField path="storageKey" type="string | null" default="null">
+  Key for storing tagging data in browser storage
+</ParamField>
+
+<ParamField path="storageTTLMs" type="number | null" default="null">
+  Time-to-live for stored tagging data
+</ParamField>
+
+## Getters
+
+The Tagging module has no getters (uses direct state access).
+
+## Mutations
+
+<ResponseField name="setConsent" type="(state, consent: boolean) => void">
+  Set user tracking consent
+</ResponseField>
+
+<ResponseField name="setQueryTaggingInfo" type="(state, info: TaggingRequest) => void">
+  Update query tagging information
+</ResponseField>
+
+<ResponseField name="setNoResultsTaggingEnabled" type="(state, module: string) => void">
+  Enable no-results tagging for semantic queries or related prompts
+</ResponseField>
+
+<ResponseField name="setConfig" type="(state, config: Partial<TaggingConfig>) => void">
+  Update configuration
+</ResponseField>
+
+<ResponseField name="mergeConfig" type="(state, config: Partial<TaggingConfig>) => void">
+  Merge configuration with existing config
+</ResponseField>
+
+## Actions
+
+<ResponseField name="track" type="(context, event: TaggingEvent) => void">
+  Track an analytics event
+</ResponseField>
+
+## Events Tracked
+
+Common events you can track:
+
+<ResponseField name="UserAcceptedAQuery" type="{ query: string }">
+  User submitted a search query
+</ResponseField>
+
+<ResponseField name="UserClickedAResult" type="{ result: Result }">
+  User clicked a search result
+</ResponseField>
+
+<ResponseField name="UserClickedARecommendation" type="{ recommendation: Result }">
+  User clicked a recommendation
+</ResponseField>
+
+<ResponseField name="UserClickedAFilter" type="{ filter: Filter }">
+  User selected/deselected a filter
+</ResponseField>
+
+<ResponseField name="UserClickedAHistoryQuery" type="{ query: string }">
+  User clicked a history query
+</ResponseField>
+
+<ResponseField name="UserAddedToCart" type="{ result: Result }">
+  User added a product to cart
+</ResponseField>
+
+<ResponseField name="UserDisplayedResults" type="{ results: Result[] }">
+  Results were displayed to user
+</ResponseField>
+
+<ResponseField name="NoResultsDisplayed" type="{ query: string }">
+  No results were found for query
+</ResponseField>
+
+## Usage Examples
+
+### Request Consent
+
+```typescript
+import { useStore } from 'vuex'
+
+const store = useStore()
+
+// Request and set user consent
+const userConsent = await requestTrackingConsent()
+store.commit('x/tagging/setConsent', userConsent)
+
+// Check consent before tracking
+const hasConsent = store.state.x.tagging.consent
+if (hasConsent) {
+  // Track events
+}
+```
+
+### Track Search Query
+
+```typescript
+// Track when user submits a query
+store.dispatch('x/tagging/track', {
+  event: 'UserAcceptedAQuery',
+  query: 'running shoes',
+  timestamp: Date.now()
+})
+```
+
+### Track Result Click
+
+```typescript
+import type { Result } from '@empathyco/x-types'
+
+const result: Result = {
+  id: 'product-123',
+  name: 'Running Shoes',
+  url: '/products/running-shoes',
+  // ... other properties
+}
+
+store.dispatch('x/tagging/track', {
+  event: 'UserClickedAResult',
+  result,
+  position: 3, // Position in results list
+  query: store.state.x.search.query
+})
+```
+
+### Track Filter Interactions
+
+```typescript
+import type { Filter } from '@empathyco/x-types'
+
+const filter: Filter = {
+  id: 'brand:nike',
+  facetId: 'brand',
+  label: 'Nike',
+  selected: true,
+  modelName: 'SimpleFilter'
+}
+
+store.dispatch('x/tagging/track', {
+  event: 'UserClickedAFilter',
+  filter,
+  action: filter.selected ? 'select' : 'deselect'
+})
+```
+
+### Track Add to Cart
+
+```typescript
+store.dispatch('x/tagging/track', {
+  event: 'UserAddedToCart',
+  result: product,
+  quantity: 1,
+  query: store.state.x.search.query
+})
+```
+
+### Component Integration
+
+```vue
+<template>
+  <div class="result-card" @click="handleClick">
+    <img :src="result.images[0]" :alt="result.name" />
+    <h3>{{ result.name }}</h3>
+    <p>{{ result.price?.value }}</p>
+    <button @click.stop="handleAddToCart">Add to Cart</button>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { useStore } from 'vuex'
+import type { Result } from '@empathyco/x-types'
+
+interface Props {
+  result: Result
+  position: number
+}
+
+const props = defineProps<Props>()
+const store = useStore()
+
+const handleClick = () => {
+  // Track click
+  store.dispatch('x/tagging/track', {
+    event: 'UserClickedAResult',
+    result: props.result,
+    position: props.position,
+    query: store.state.x.search.query
+  })
+  
+  // Navigate to product
+  window.location.href = props.result.url
+}
+
+const handleAddToCart = () => {
+  // Track add to cart
+  store.dispatch('x/tagging/track', {
+    event: 'UserAddedToCart',
+    result: props.result,
+    query: store.state.x.search.query
+  })
+  
+  // Add to cart logic
+  store.dispatch('cart/addItem', props.result)
+}
+</script>
+```
+
+### Track Display Events
+
+```vue
+<template>
+  <div>
+    <div 
+      v-for="(result, index) in visibleResults" 
+      :key="result.id"
+      v-observe-visibility="(isVisible) => onVisibilityChange(result, index, isVisible)"
+    >
+      <ResultCard :result="result" />
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { useStore } from 'vuex'
+import type { Result } from '@empathyco/x-types'
+
+const store = useStore()
+const displayedResults = ref<Set<string>>(new Set())
+
+const onVisibilityChange = (
+  result: Result, 
+  position: number, 
+  isVisible: boolean
+) => {
+  if (isVisible && !displayedResults.value.has(result.id)) {
+    displayedResults.value.add(result.id)
+    
+    store.dispatch('x/tagging/track', {
+      event: 'UserDisplayedResult',
+      result,
+      position,
+      query: store.state.x.search.query
+    })
+  }
+}
+</script>
+```
+
+### Query Tagging Integration
+
+```typescript
+import { watch } from 'vue'
+
+// Update query tagging info from search response
+watch(
+  () => store.state.x.search.queryTagging,
+  (queryTagging) => {
+    if (queryTagging) {
+      store.commit('x/tagging/setQueryTaggingInfo', queryTagging)
+    }
+  }
+)
+
+// Access query tagging for tracking requests
+const queryTaggingInfo = store.state.x.tagging.queryTaggingInfo
+if (queryTaggingInfo) {
+  // Include in tracking request
+  const trackingData = {
+    event: 'UserClickedAResult',
+    result,
+    tagging: queryTaggingInfo
+  }
+}
+```
+
+### No Results Tracking
+
+```typescript
+import { watch } from 'vue'
+
+// Track when no results are displayed
+watch(
+  () => store.state.x.search.isNoResults,
+  (isNoResults) => {
+    if (isNoResults) {
+      const query = store.state.x.search.query
+      
+      store.dispatch('x/tagging/track', {
+        event: 'NoResultsDisplayed',
+        query,
+        filters: store.getters['x/facets/selectedFilters']
+      })
+    }
+  }
+)
+```
+
+### Session Tracking
+
+```typescript
+// Configure session tracking
+store.commit('x/tagging/setConfig', {
+  sessionTTLMs: 30 * 60 * 1000, // 30 minutes
+  storageKey: 'x-tagging-session',
+  storageTTLMs: 24 * 60 * 60 * 1000 // 24 hours
+})
+
+// Session info is automatically included in events
+```
+
+### Custom Event Tracking
+
+```typescript
+// Track custom events
+store.dispatch('x/tagging/track', {
+  event: 'CustomEvent',
+  category: 'user_interaction',
+  action: 'filter_refinement',
+  label: 'price_range',
+  value: { min: 0, max: 100 },
+  metadata: {
+    page: 'search_results',
+    deviceType: 'mobile'
+  }
+})
+```
+
+### Consent Management Component
+
+```vue
+<template>
+  <div v-if="showConsentBanner" class="consent-banner">
+    <p>We use cookies and tracking to improve your experience.</p>
+    <button @click="acceptConsent">Accept</button>
+    <button @click="denyConsent">Decline</button>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { useStore } from 'vuex'
+
+const store = useStore()
+const showConsentBanner = ref(false)
+
+const consent = computed(() => store.state.x.tagging.consent)
+
+onMounted(() => {
+  // Show banner if consent not set
+  if (consent.value === null) {
+    showConsentBanner.value = true
+  }
+})
+
+const acceptConsent = () => {
+  store.commit('x/tagging/setConsent', true)
+  showConsentBanner.value = false
+  localStorage.setItem('tracking-consent', 'true')
+}
+
+const denyConsent = () => {
+  store.commit('x/tagging/setConsent', false)
+  showConsentBanner.value = false
+  localStorage.setItem('tracking-consent', 'false')
+}
+</script>
+```
+
+## Integration with Analytics Platforms
+
+### Google Analytics
+
+```typescript
+import { watch } from 'vue'
+
+// Forward tagging events to Google Analytics
+watch(
+  () => store.state.x.tagging,
+  () => {
+    // Intercept track action or use event bus
+  },
+  { deep: true }
+)
+
+function sendToGA(event: TaggingEvent) {
+  if (window.gtag) {
+    window.gtag('event', event.event, {
+      ...event,
+      send_to: 'GA_MEASUREMENT_ID'
+    })
+  }
+}
+```
+
+### Custom Analytics
+
+```typescript
+import { watch } from 'vue'
+import { useStore } from 'vuex'
+
+const store = useStore()
+
+// Listen to tagging events and forward to your analytics service
+store.subscribeAction({
+  after: (action, state) => {
+    if (action.type === 'x/tagging/track') {
+      sendToAnalytics(action.payload)
+    }
+  }
+})
+
+async function sendToAnalytics(event: TaggingEvent) {
+  if (!store.state.x.tagging.consent) return
+  
+  await fetch('/api/analytics', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      event,
+      sessionId: getSessionId(),
+      timestamp: Date.now()
+    })
+  })
+}
+```
+
+## Type Definitions
+
+### TaggingRequest
+
+```typescript
+interface TaggingRequest {
+  url: string
+  params: Record<string, any>
+}
+```
+
+### TaggingEvent
+
+```typescript
+interface TaggingEvent {
+  event: string
+  [key: string]: any
+}
+```
+
+## Related Modules
+
+- [Search Module](/api/modules/search) - Track search interactions
+- [Facets Module](/api/modules/facets) - Track filter interactions
+- [History Queries Module](/api/modules/history-queries) - Track history usage
+- [Recommendations Module](/api/modules/recommendations) - Track recommendation clicks
+
+## Type Reference
+
+Source: `/home/daytona/workspace/source/packages/x-components/src/x-modules/tagging/store/module.ts:1`
+
+## Resources
+
+<CardGroup cols={2}>
+  <Card title="x-types" icon="brackets-curly" href="/api/x-types">
+    Tagging type definitions
+  </Card>
+  <Card title="Tagging Documentation" icon="shield" href="/advanced/tagging">
+    Tagging implementation guide
+  </Card>
+</CardGroup>

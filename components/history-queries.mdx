@@ -1,0 +1,469 @@
+---
+title: History Queries
+description: Display and manage user search history with customizable components
+---
+
+The History Queries module provides components for displaying, managing, and interacting with a user's search history. It stores queries in browser storage and allows users to quickly repeat past searches.
+
+## Overview
+
+History Queries is a powerful module that tracks user search behavior and presents it as clickable suggestions. This helps users quickly access their previous searches without retyping, improving the search experience and reducing friction.
+
+### Key Features
+
+- **Persistent Storage**: Queries are saved to browser storage and persist across sessions
+- **Query Filtering**: Hides queries that match the current search to avoid redundancy
+- **Session Management**: Tracks queries within a session with configurable TTL
+- **Customizable Display**: Multiple components for different presentation styles
+- **Remove Individual Items**: Users can delete specific queries from history
+- **Clear All**: Bulk delete all history queries
+
+## Components
+
+### HistoryQueries
+
+The main component that renders a filtered list of history query suggestions. It inherits from `BaseSuggestions` and provides slots for customization.
+
+#### Props
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `animation` | `Vue Component` | `"ul"` | Animation component for list transitions |
+| `maxItemsToRender` | `number` | `5` | Maximum number of queries to display |
+
+#### Slots
+
+- **`suggestion`**: Customize the entire history query item
+  - Bindings: `suggestion` (HistoryQuery object), `index` (number)
+- **`suggestion-content`**: Customize the content within each suggestion
+  - Bindings: `suggestion`, `index`
+- **`suggestion-remove-content`**: Customize the remove button icon/text
+  - Bindings: `suggestion`, `index`
+
+#### Usage
+
+```vue
+<template>
+  <div>
+    <SearchInput />
+    <HistoryQueries :maxItemsToRender="10" />
+  </div>
+</template>
+
+<script setup>
+import { SearchInput } from '@empathyco/x-components/search-box'
+import { HistoryQueries } from '@empathyco/x-components/history-queries'
+</script>
+```
+
+#### With Animation
+
+```vue
+<template>
+  <HistoryQueries :animation="FadeAndSlide" />
+</template>
+
+<script setup>
+import { HistoryQueries } from '@empathyco/x-components/history-queries'
+import { FadeAndSlide } from '@empathyco/x-components'
+</script>
+```
+
+#### Custom Content
+
+```vue
+<template>
+  <HistoryQueries #suggestion-content="{ suggestion }">
+    <span class="query-text">{{ suggestion.query }}</span>
+  </HistoryQueries>
+</template>
+
+<script setup>
+import { HistoryQueries } from '@empathyco/x-components/history-queries'
+</script>
+```
+
+### HistoryQuery
+
+Renders an individual history query suggestion with a clickable button to select it and a remove button to delete it from history.
+
+#### Props
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `suggestion` | `HistoryQuery` | Yes | The history query data to render |
+| `suggestionClass` | `string` | No | CSS class for the suggestion button |
+| `removeButtonClass` | `string` | No | CSS class for the remove button |
+
+#### Events
+
+- **`UserSelectedAHistoryQuery`**: Emitted when user clicks the suggestion
+  - Payload: `HistoryQuery` object
+
+#### Slots
+
+- **`default`**: Customize the suggestion content
+  - Bindings: `suggestion`, `query`
+- **`remove-button-content`**: Customize remove button
+  - Bindings: `suggestion`
+
+#### Usage
+
+```vue
+<template>
+  <HistoryQuery :suggestion="historyQuery" />
+</template>
+
+<script setup>
+import { HistoryQuery } from '@empathyco/x-components/history-queries'
+import { ref } from 'vue'
+
+const historyQuery = ref({
+  modelName: 'HistoryQuery',
+  query: 'running shoes',
+  facets: [],
+  timestamp: Date.now()
+})
+</script>
+```
+
+#### With Custom Content
+
+```vue
+<template>
+  <HistoryQuery :suggestion="historyQuery">
+    <template #default="{ suggestion }">
+      <HistoryIcon />
+      <span>{{ suggestion.query }}</span>
+    </template>
+    <template #remove-button-content>
+      <CrossIcon />
+    </template>
+  </HistoryQuery>
+</template>
+
+<script setup>
+import { HistoryQuery } from '@empathyco/x-components/history-queries'
+import { HistoryIcon, CrossIcon } from '@empathyco/x-components'
+import { ref } from 'vue'
+
+const historyQuery = ref({
+  modelName: 'HistoryQuery',
+  query: 'running shoes',
+  facets: []
+})
+</script>
+```
+
+### MyHistory
+
+Displays the complete search history grouped by date. Ideal for a dedicated history page or panel.
+
+#### Props
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `animation` | `Vue Component` | `"ul"` | Animation component for transitions |
+| `locale` | `string` | `"en"` | Locale for date/time formatting |
+| `queriesListClass` | `string` | `undefined` | CSS class for query lists |
+
+#### Slots
+
+- **`date`**: Customize date header display
+  - Bindings: `date` (formatted string)
+- **`suggestion`**: Customize individual query items
+  - Bindings: `suggestion`, `index`, `formatTime` (function)
+- **`suggestion-content`**: Customize query content
+  - Bindings: `suggestion`, `index`, `formatTime`
+- **`suggestion-remove-content`**: Customize remove button
+  - Bindings: `suggestion`, `index`
+
+#### Usage
+
+```vue
+<template>
+  <MyHistory locale="en" />
+</template>
+
+<script setup>
+import { MyHistory } from '@empathyco/x-components/history-queries'
+</script>
+```
+
+#### With Custom Date Format
+
+```vue
+<template>
+  <MyHistory #date="{ date }">
+    <h3 class="date-header">{{ date }}</h3>
+  </MyHistory>
+</template>
+
+<script setup>
+import { MyHistory } from '@empathyco/x-components/history-queries'
+</script>
+```
+
+#### With Custom Content
+
+```vue
+<template>
+  <MyHistory #suggestion-content="{ suggestion, formatTime }">
+    <div class="history-item">
+      <span class="query">{{ suggestion.query }}</span>
+      <span class="time">{{ formatTime(suggestion.timestamp) }}</span>
+    </div>
+  </MyHistory>
+</template>
+
+<script setup>
+import { MyHistory } from '@empathyco/x-components/history-queries'
+</script>
+```
+
+### ClearHistoryQueries
+
+A button component that clears all history queries when clicked. Automatically disables when history is empty.
+
+#### Events
+
+- **`UserPressedClearHistoryQueries`**: Emitted when button is clicked
+
+#### Slots
+
+- **`default`**: Button content (text, icon, or both)
+
+#### Usage
+
+```vue
+<template>
+  <div>
+    <ClearHistoryQueries>
+      Clear All History
+    </ClearHistoryQueries>
+    <HistoryQueries />
+  </div>
+</template>
+
+<script setup>
+import { ClearHistoryQueries, HistoryQueries } from '@empathyco/x-components/history-queries'
+</script>
+```
+
+## Configuration
+
+Configure the History Queries module during X Components installation:
+
+```typescript
+import { InstallXOptions } from '@empathyco/x-components'
+
+const installXOptions: InstallXOptions = {
+  xModules: {
+    historyQueries: {
+      config: {
+        debounceInMs: 250,
+        maxItemsToStore: 100,
+        hideIfEqualsQuery: true,
+        sessionTTLInMs: 1800000 // 30 minutes
+      }
+    }
+  }
+}
+```
+
+### Configuration Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `debounceInMs` | `number` | - | Debounce time for setting module query |
+| `maxItemsToStore` | `number` | - | Maximum history queries in browser storage |
+| `hideIfEqualsQuery` | `boolean` | - | Hide query if it matches current search |
+| `sessionTTLInMs` | `number` | - | Session timeout in milliseconds |
+
+## Events
+
+The History Queries module emits the following events:
+
+### User Interaction Events
+
+- **`UserSelectedAHistoryQuery`**: User clicked a history query
+  - Payload: `HistoryQuery` object
+- **`UserPressedRemoveHistoryQuery`**: User clicked remove on a query
+  - Payload: `HistoryQuery` object
+- **`UserPressedClearHistoryQueries`**: User clicked clear all button
+  - Payload: `void`
+- **`UserClickedEnableHistoryQueries`**: User enabled history tracking
+  - Payload: `void`
+- **`UserClickedDisableHistoryQueries`**: User disabled history tracking
+  - Payload: `void`
+
+### State Change Events
+
+- **`HistoryQueriesDisplayed`**: Queries displayed to user
+  - Payload: `HistoryQuery[]`
+- **`HistoryQueriesQueryChanged`**: Search query for filtering changed
+  - Payload: `string`
+- **`SessionHistoryQueriesChanged`**: Session queries updated
+  - Payload: `HistoryQuery[]`
+- **`HistoryQueriesStorageKeyChanged`**: Browser storage key changed
+  - Payload: `string`
+
+## Integration Patterns
+
+### In Empathize Layer
+
+Display history queries alongside other suggestions in the Empathize predictive layer:
+
+```vue
+<template>
+  <Empathize>
+    <BaseKeyboardNavigation>
+      <QuerySuggestions />
+      <PopularSearches />
+      <HistoryQueries :maxItemsToRender="5" />
+    </BaseKeyboardNavigation>
+  </Empathize>
+</template>
+
+<script setup>
+import { Empathize } from '@empathyco/x-components/empathize'
+import { BaseKeyboardNavigation } from '@empathyco/x-components'
+import { QuerySuggestions } from '@empathyco/x-components/query-suggestions'
+import { PopularSearches } from '@empathyco/x-components/popular-searches'
+import { HistoryQueries } from '@empathyco/x-components/history-queries'
+</script>
+```
+
+### Dedicated History Page
+
+Create a full history view with clear functionality:
+
+```vue
+<template>
+  <div class="history-page">
+    <header>
+      <h1>Search History</h1>
+      <ClearHistoryQueries>
+        <TrashIcon /> Clear All
+      </ClearHistoryQueries>
+    </header>
+    <MyHistory :animation="FadeAndSlide" locale="en" />
+  </div>
+</template>
+
+<script setup>
+import { MyHistory, ClearHistoryQueries } from '@empathyco/x-components/history-queries'
+import { FadeAndSlide, TrashIcon } from '@empathyco/x-components'
+</script>
+```
+
+### With Custom Styling
+
+```vue
+<template>
+  <HistoryQueries 
+    :maxItemsToRender="8"
+    #suggestion="{ suggestion }"
+  >
+    <HistoryQuery 
+      :suggestion="suggestion"
+      suggestion-class="custom-suggestion"
+      remove-button-class="custom-remove"
+    >
+      <template #default="{ suggestion }">
+        <ClockIcon class="icon" />
+        <span class="query-text">{{ suggestion.query }}</span>
+      </template>
+      <template #remove-button-content>
+        <XIcon class="remove-icon" />
+      </template>
+    </HistoryQuery>
+  </HistoryQueries>
+</template>
+
+<script setup>
+import { HistoryQueries, HistoryQuery } from '@empathyco/x-components/history-queries'
+import { ClockIcon, XIcon } from '@empathyco/x-components'
+</script>
+
+<style scoped>
+.custom-suggestion {
+  padding: 12px 16px;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+
+.custom-suggestion:hover {
+  background-color: #f5f5f5;
+}
+
+.custom-remove {
+  color: #888;
+  padding: 4px 8px;
+}
+
+.custom-remove:hover {
+  color: #d32f2f;
+}
+</style>
+```
+
+## Best Practices
+
+### Storage Limits
+
+Set appropriate storage limits based on your use case:
+
+```typescript
+historyQueries: {
+  config: {
+    maxItemsToStore: 100,  // Store more than you display
+    maxItemsToRender: 5    // Show only recent ones
+  }
+}
+```
+
+### Privacy Considerations
+
+Provide users control over their history:
+
+```vue
+<template>
+  <div class="history-controls">
+    <HistoryQueriesSwitch />
+    <ClearHistoryQueries>Clear History</ClearHistoryQueries>
+  </div>
+</template>
+```
+
+### Session Management
+
+Adjust session TTL based on your application:
+
+```typescript
+historyQueries: {
+  config: {
+    sessionTTLInMs: 1800000  // 30 minutes for e-commerce
+    // sessionTTLInMs: 3600000  // 60 minutes for research tools
+  }
+}
+```
+
+### Query Filtering
+
+Enable filtering to avoid showing duplicate current queries:
+
+```typescript
+historyQueries: {
+  config: {
+    hideIfEqualsQuery: true  // Recommended for better UX
+  }
+}
+```
+
+## Related Components
+
+- [Empathize](/components/empathize) - Predictive layer container
+- [Query Suggestions](/components/query-suggestions) - AI-powered suggestions
+- [Popular Searches](/components/popular-searches) - Trending searches
+- [Base Components](/components/base-components) - Foundational UI components

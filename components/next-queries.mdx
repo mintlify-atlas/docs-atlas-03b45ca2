@@ -1,0 +1,241 @@
+---
+title: "Next Queries"
+description: "Display suggested follow-up queries based on user search patterns"
+---
+
+## Overview
+
+The `NextQueries` component renders a list of suggested follow-up search queries based on common search patterns. If users typically search for "shirts" and then "trousers", for example, "trousers" would be suggested as a next query after "shirts". This helps users refine and continue their search journey.
+
+## When to Use
+
+Use the NextQueries component to:
+
+- Guide users to related searches after they perform a query
+- Improve search flow by suggesting logical next steps
+- Help users discover related products or categories
+- Reduce search friction by anticipating user needs
+
+## Installation
+
+Import the component from the next-queries module:
+
+```javascript
+import { NextQueries } from '@empathyco/x-components/next-queries'
+```
+
+## Basic Usage
+
+The component automatically displays next queries after a search is performed:
+
+```vue
+<template>
+  <div>
+    <SearchInput />
+    <NextQueries />
+  </div>
+</template>
+
+<script setup>
+import { SearchInput } from '@empathyco/x-components/search-box'
+import { NextQueries } from '@empathyco/x-components/next-queries'
+</script>
+```
+
+## Props
+
+This component inherits all props from [Base Components](/components/base-components) and adds additional functionality:
+
+<ParamField path="animation" type="Vue Component" default="'ul'">
+  Animation component that will be used to animate the suggestions.
+</ParamField>
+
+<ParamField path="maxItemsToRender" type="number" default="5">
+  Number of next queries to be rendered. By default, it limits to 5 suggestions.
+</ParamField>
+
+<ParamField path="highlightCurated" type="boolean" default="false">
+  Flag to indicate if curated next queries should be displayed differently from algorithmic ones. When true, curated queries can have distinct styling.
+</ParamField>
+
+<ParamField path="suggestions" type="NextQuery[]" default="undefined">
+  Optional array of next queries to use instead of the state's next queries. Useful for providing custom suggestions.
+</ParamField>
+
+## Slots
+
+### suggestion Slot
+
+Customize the entire next query item including the wrapper.
+
+**Slot Props:**
+- `suggestion` (Suggestion) - The next query suggestion data
+- `index` (number) - The index of the suggestion in the list
+- `highlightCurated` (boolean) - Whether curated queries should be highlighted
+
+```vue
+<NextQueries>
+  <template #suggestion="{ suggestion }">
+    <NextQuery :suggestion="suggestion">
+      <template #default="{ suggestion }">
+        <TrendingIcon />
+        <span>{{ suggestion.query }}</span>
+      </template>
+    </NextQuery>
+    <button>Custom Action</button>
+  </template>
+</NextQueries>
+```
+
+### suggestion-content Slot
+
+Customize only the content of each next query.
+
+**Slot Props:**
+- `suggestion` (Suggestion) - The next query suggestion data
+- `index` (number) - The index of the suggestion in the list
+- `shouldHighlightCurated` (boolean) - Whether this specific query should be highlighted
+
+```vue
+<NextQueries>
+  <template #suggestion-content="{ suggestion }">
+    <TrendingIcon />
+    <span class="x-next-query__query">{{ suggestion.query }}</span>
+  </template>
+</NextQueries>
+```
+
+## Events
+
+The component emits events through the event bus:
+
+- **UserSelectedANextQuery**: Emitted when a user clicks on a next query suggestion
+
+## Examples
+
+### Basic Example
+
+Display next queries after a search with default styling:
+
+```vue
+<template>
+  <div>
+    <SearchInput />
+    <NextQueries />
+  </div>
+</template>
+
+<script setup>
+import { SearchInput } from '@empathyco/x-components/search-box'
+import { NextQueries } from '@empathyco/x-components/next-queries'
+</script>
+```
+
+### With Animation and Curated Highlighting
+
+Add animations and highlight curated suggestions:
+
+```vue
+<template>
+  <div>
+    <SearchInput />
+    <NextQueries
+      :animation="FadeAndSlide"
+      :maxItemsToRender="10"
+      :highlightCurated="true"
+    />
+  </div>
+</template>
+
+<script setup>
+import { SearchInput } from '@empathyco/x-components/search-box'
+import { NextQueries } from '@empathyco/x-components/next-queries'
+import { FadeAndSlide } from '@empathyco/x-components'
+</script>
+```
+
+### Custom Content with Icons
+
+Add icons and custom styling to next query items:
+
+```vue
+<template>
+  <div>
+    <SearchInput />
+    <NextQueries>
+      <template #suggestion-content="{ suggestion }">
+        <TrendingIcon class="icon" />
+        <span class="x-next-query__query">{{ suggestion.query }}</span>
+      </template>
+    </NextQueries>
+  </div>
+</template>
+
+<script setup>
+import { SearchInput } from '@empathyco/x-components/search-box'
+import { NextQueries } from '@empathyco/x-components/next-queries'
+import { TrendingIcon } from '@empathyco/x-components'
+</script>
+```
+
+### Custom Next Query Component
+
+Create a fully custom next query implementation:
+
+```vue
+<template>
+  <div>
+    <SearchInput />
+    <NextQueries>
+      <template #suggestion="{ suggestion }">
+        <NextQuery :suggestion="suggestion" class="x-next-queries__suggestion">
+          <template #default="{ suggestion }">
+            <TrendingIcon />
+            <span class="x-next-query__query">{{ suggestion.query }}</span>
+          </template>
+        </NextQuery>
+        <button class="custom-action">Custom Action</button>
+      </template>
+    </NextQueries>
+  </div>
+</template>
+
+<script setup>
+import { SearchInput } from '@empathyco/x-components/search-box'
+import { NextQueries, NextQuery } from '@empathyco/x-components/next-queries'
+import { TrendingIcon } from '@empathyco/x-components'
+</script>
+```
+
+## Integration Tips
+
+<Tip>
+  Combine NextQueries with search results to create a seamless search refinement experience. Users can quickly pivot to related searches without starting over.
+</Tip>
+
+<Note>
+  Next queries are generated from user behavior patterns in your search service. Make sure your API is configured to return next query suggestions based on search analytics.
+</Note>
+
+## Curated vs Algorithmic
+
+Next queries can be either:
+
+- **Algorithmic**: Generated automatically from user search patterns
+- **Curated**: Manually configured by merchandisers for specific queries
+
+Use the `highlightCurated` prop to visually distinguish curated suggestions, helping users identify editorially selected recommendations.
+
+## Styling
+
+The component uses these CSS classes:
+
+- `.x-next-queries` - Main container
+- `.x-next-queries__suggestion` - Individual suggestion wrapper
+- `.x-next-query__query` - Query text
+
+## Related Components
+
+- [Popular Searches](/components/popular-searches) - Display trending searches
+- [Related Tags](/components/related-tags) - Show tag-based refinements
+- [Query Suggestions](/components/query-suggestions) - Autocomplete suggestions

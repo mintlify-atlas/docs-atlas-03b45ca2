@@ -1,0 +1,390 @@
+---
+title: '@empathyco/x-tailwindcss'
+description: 'Tailwind CSS plugin for Interface X design system'
+icon: 'palette'
+---
+
+## Overview
+
+`@empathyco/x-tailwindcss` is a Tailwind CSS plugin that provides design system utilities, components, and theme configuration for Interface X. It includes pre-built component styles, utility classes, and dynamic variants based on the X design system.
+
+## Installation
+
+<CodeGroup>
+```bash npm
+npm install @empathyco/x-tailwindcss tailwindcss
+```
+
+```bash yarn
+yarn add @empathyco/x-tailwindcss tailwindcss
+```
+
+```bash pnpm
+pnpm add @empathyco/x-tailwindcss tailwindcss
+```
+</CodeGroup>
+
+## Setup
+
+Add the plugin to your Tailwind CSS configuration:
+
+```javascript tailwind.config.js
+const xTailwindPlugin = require('@empathyco/x-tailwindcss')
+
+module.exports = {
+  content: [
+    './src/**/*.{vue,js,ts,jsx,tsx}',
+  ],
+  plugins: [
+    xTailwindPlugin
+  ]
+}
+```
+
+## Features
+
+### Pre-built Components
+
+The plugin includes styled components for common Interface X patterns:
+
+- Search boxes
+- Result cards
+- Facet filters
+- Buttons and controls
+- Modal dialogs
+- Dropdown menus
+
+### Utility Classes
+
+Custom utility classes for:
+- Layout patterns
+- Spacing system
+- Typography scales
+- Color schemes
+
+### Dynamic Components
+
+Component classes that accept values:
+
+```html
+<div class="x-result-card">
+  <img class="x-result-image" />
+  <h3 class="x-result-title">Product Name</h3>
+  <p class="x-result-price">$29.99</p>
+</div>
+```
+
+### Dynamic Utilities
+
+Utility classes with custom values:
+
+```html
+<div class="x-spacing-base">
+  <div class="x-elevation-2">
+    Content with elevation
+  </div>
+</div>
+```
+
+## Theme Configuration
+
+The plugin extends Tailwind's theme with the `x` namespace:
+
+```javascript tailwind.config.js
+module.exports = {
+  theme: {
+    extend: {
+      x: {
+        colors: {
+          // X design system colors
+        },
+        spacing: {
+          // X spacing scale
+        },
+        borderRadius: {
+          // X border radius values
+        }
+      }
+    }
+  }
+}
+```
+
+## Custom Variants
+
+### Selected Variant
+
+The plugin adds a `selected:` variant for styling selected items:
+
+```html
+<button class="x-filter selected:bg-blue-600 selected:text-white">
+  Filter Option
+</button>
+```
+
+Applied when element has `x-selected` class:
+
+```html
+<button class="x-filter x-selected">
+  Active Filter
+</button>
+```
+
+## Component Styles
+
+### Search Box
+
+```html
+<div class="x-search-box">
+  <input 
+    type="text" 
+    class="x-search-input" 
+    placeholder="Search products..."
+  />
+  <button class="x-search-button">
+    Search
+  </button>
+</div>
+```
+
+### Result Card
+
+```html
+<article class="x-result-card">
+  <img src="product.jpg" class="x-result-image" />
+  <div class="x-result-content">
+    <h3 class="x-result-title">Product Name</h3>
+    <p class="x-result-description">Product description text</p>
+    <div class="x-result-footer">
+      <span class="x-result-price">$29.99</span>
+      <button class="x-result-button">Add to Cart</button>
+    </div>
+  </div>
+</article>
+```
+
+### Facet Filter
+
+```html
+<div class="x-facet">
+  <h4 class="x-facet-title">Category</h4>
+  <ul class="x-facet-list">
+    <li class="x-facet-item">
+      <button class="x-filter">
+        <span class="x-filter-label">Electronics</span>
+        <span class="x-filter-count">42</span>
+      </button>
+    </li>
+    <li class="x-facet-item">
+      <button class="x-filter x-selected">
+        <span class="x-filter-label">Clothing</span>
+        <span class="x-filter-count">18</span>
+      </button>
+    </li>
+  </ul>
+</div>
+```
+
+### Modal
+
+```html
+<div class="x-modal-overlay">
+  <div class="x-modal">
+    <div class="x-modal-header">
+      <h3>Modal Title</h3>
+      <button class="x-modal-close">×</button>
+    </div>
+    <div class="x-modal-body">
+      Modal content
+    </div>
+    <div class="x-modal-footer">
+      <button class="x-button">Cancel</button>
+      <button class="x-button x-button-primary">Confirm</button>
+    </div>
+  </div>
+</div>
+```
+
+## Utility Classes
+
+### Layout
+
+```html
+<!-- Grid layouts -->
+<div class="x-grid x-grid-cols-3">
+  <div class="x-grid-item">Item 1</div>
+  <div class="x-grid-item">Item 2</div>
+  <div class="x-grid-item">Item 3</div>
+</div>
+
+<!-- Flex layouts -->
+<div class="x-flex x-flex-center">
+  <div>Centered content</div>
+</div>
+```
+
+### Typography
+
+```html
+<h1 class="x-heading-1">Main Heading</h1>
+<h2 class="x-heading-2">Section Heading</h2>
+<p class="x-body">Body text with proper line height</p>
+<span class="x-label">Label text</span>
+```
+
+### Spacing
+
+```html
+<div class="x-spacing-sm">Small spacing</div>
+<div class="x-spacing-base">Base spacing</div>
+<div class="x-spacing-lg">Large spacing</div>
+```
+
+## Plugin Architecture
+
+The plugin is built with:
+
+```typescript
+import plugin from 'tailwindcss/plugin'
+import components from './components'
+import dynamicComponents from './dynamic-components'
+import dynamicUtilities from './dynamic-utilities'
+import utilities from './utilities'
+import xTheme from './theme'
+
+export default plugin.withOptions(
+  () => (helpers) => {
+    // Add components
+    helpers.addComponents(components(helpers), { respectPrefix: false })
+    
+    // Add dynamic components
+    helpers.matchComponents(dynamicComponents(helpers))
+    
+    // Add dynamic utilities
+    helpers.matchUtilities(dynamicUtilities(helpers))
+    
+    // Add utilities
+    helpers.addUtilities(utilities(helpers), { respectPrefix: false })
+    
+    // Add selected variant
+    helpers.addVariant('selected', '&.x-selected')
+  },
+  () => ({
+    theme: { x: xTheme }
+  })
+)
+```
+
+## Customization
+
+### Extending the Theme
+
+```javascript tailwind.config.js
+const xTailwindPlugin = require('@empathyco/x-tailwindcss')
+
+module.exports = {
+  plugins: [xTailwindPlugin],
+  theme: {
+    extend: {
+      x: {
+        colors: {
+          // Override or add custom colors
+          primary: '#ff0000',
+          secondary: '#00ff00'
+        },
+        spacing: {
+          // Custom spacing values
+          xs: '0.25rem',
+          xl: '2rem'
+        }
+      }
+    }
+  }
+}
+```
+
+### Custom Components
+
+Combine plugin classes with custom Tailwind utilities:
+
+```html
+<div class="x-result-card bg-white shadow-lg hover:shadow-xl transition-shadow">
+  <!-- Custom styling on top of base component -->
+</div>
+```
+
+## Using with Vue Components
+
+```vue
+<template>
+  <div class="x-search-interface">
+    <SearchBox class="x-search-box" />
+    <Facets class="x-facets" />
+    <ResultsList class="x-results" />
+  </div>
+</template>
+
+<script setup lang="ts">
+import { SearchBox, Facets, ResultsList } from '@empathyco/x-components'
+</script>
+
+<style>
+@import '@empathyco/x-tailwindcss/showcase';
+</style>
+```
+
+## PostCSS Configuration
+
+Ensure PostCSS is configured to process Tailwind:
+
+```javascript postcss.config.js
+module.exports = {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {}
+  }
+}
+```
+
+## Dependencies
+
+The package depends on:
+
+- `tailwindcss` - ^3.4.19 (peer dependency)
+- `@empathyco/x-deep-merge` - Deep merging utilities
+- `@empathyco/x-utils` - Utility functions
+
+## Development
+
+To preview the design system:
+
+```bash
+pnpm dev
+```
+
+This runs a showcase site with all component styles and utilities.
+
+## Build Output
+
+The plugin provides multiple build formats:
+
+- `dist/cjs/index.js` - CommonJS module
+- `dist/esm/index.js` - ES module
+- `dist/types/index.d.ts` - TypeScript definitions
+- `showcase/` - Built design system showcase
+
+## Related Packages
+
+- [@empathyco/x-components](/api/x-components) - Components that use these styles
+- [@empathyco/x-utils](/api/x-utils) - Utility functions
+
+## Resources
+
+<CardGroup cols={2}>
+  <Card title="GitHub Repository" icon="github" href="https://github.com/empathyco/x">
+    View source code and examples
+  </Card>
+  <Card title="Tailwind CSS Docs" icon="wind" href="https://tailwindcss.com">
+    Learn more about Tailwind CSS
+  </Card>
+</CardGroup>

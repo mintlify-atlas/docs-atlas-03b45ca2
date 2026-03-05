@@ -1,0 +1,304 @@
+---
+title: "QuerySuggestions"
+description: "Display autocomplete suggestions as users type their search query"
+---
+
+## Overview
+
+The `QuerySuggestions` component renders a list of possible search queries to help users refine their search as they type. These suggestions are based on previous search patterns and can include associated filters.
+
+## Installation
+
+Import the `QuerySuggestions` component from the query-suggestions module:
+
+```javascript
+import { QuerySuggestions } from '@empathyco/x-components/query-suggestions'
+```
+
+## Props
+
+The component inherits props from `BaseSuggestions`:
+
+<ParamField path="animation" type="Vue Component" default="'ul'">
+  Animation component for the suggestions list.
+</ParamField>
+
+<ParamField path="maxItemsToRender" type="number">
+  Maximum number of query suggestions to display.
+</ParamField>
+
+## Events
+
+- **`UserSelectedAQuerySuggestion`** - Emitted when a user clicks on a suggestion
+- **`UserAcceptedAQuery`** - Emitted when a suggestion is selected
+- **`UserSelectedASuggestion`** - Generic suggestion selection event
+
+## Basic Usage
+
+Display query suggestions as users type:
+
+```vue
+<template>
+  <div>
+    <SearchInput />
+    <QuerySuggestions />
+  </div>
+</template>
+
+<script setup>
+import { QuerySuggestions } from '@empathyco/x-components/query-suggestions'
+import { SearchInput } from '@empathyco/x-components/search-box'
+</script>
+```
+
+## With Animation
+
+Add staggered animations for a polished effect:
+
+```vue
+<template>
+  <div>
+    <SearchInput />
+    <QuerySuggestions :animation="StaggeredFadeAndSlide" />
+  </div>
+</template>
+
+<script setup>
+import { QuerySuggestions } from '@empathyco/x-components/query-suggestions'
+import { SearchInput } from '@empathyco/x-components/search-box'
+import { StaggeredFadeAndSlide } from '@empathyco/x-components/animations'
+</script>
+```
+
+## Custom Suggestion Rendering
+
+Customize the appearance of suggestions using the `suggestion` slot:
+
+```vue
+<template>
+  <div>
+    <SearchInput />
+    <QuerySuggestions #suggestion="{ suggestion }">
+      <QuerySuggestion :suggestion="suggestion" #default="{ suggestion }">
+        <span class="icon">🔍</span>
+        <span class="query-text">{{ suggestion.query }}</span>
+      </QuerySuggestion>
+    </QuerySuggestions>
+  </div>
+</template>
+
+<script setup>
+import { QuerySuggestion, QuerySuggestions } from '@empathyco/x-components/query-suggestions'
+import { SearchInput } from '@empathyco/x-components/search-box'
+</script>
+```
+
+## Custom Content with Highlighting
+
+Highlight matching text in suggestions:
+
+```vue
+<template>
+  <div>
+    <SearchInput />
+    <QuerySuggestions #suggestion-content="{ suggestion, query }">
+      <span class="icon">🔍</span>
+      <Highlight :text="suggestion.query" :highlight="query" />
+    </QuerySuggestions>
+  </div>
+</template>
+
+<script setup>
+import { QuerySuggestions } from '@empathyco/x-components/query-suggestions'
+import { SearchInput } from '@empathyco/x-components/search-box'
+import { Highlight } from '@empathyco/x-components'
+</script>
+```
+
+## Custom Click Handling
+
+If you're not using the default `QuerySuggestion` component, you must handle click events manually:
+
+```vue
+<template>
+  <div>
+    <SearchInput />
+    <QuerySuggestions #suggestion="{ suggestion }">
+      <button @click="handleClick($event, suggestion)" class="custom-suggestion">
+        {{ suggestion.query }}
+      </button>
+    </QuerySuggestions>
+  </div>
+</template>
+
+<script setup>
+import { QuerySuggestions } from '@empathyco/x-components/query-suggestions'
+import { SearchInput } from '@empathyco/x-components/search-box'
+import { use$x } from '@empathyco/x-components'
+
+const $x = use$x()
+
+const handleClick = (event, suggestion) => {
+  $x.emit('UserAcceptedAQuery', suggestion.query, {
+    target: event.target
+  })
+  $x.emit('UserSelectedASuggestion', suggestion, {
+    target: event.target
+  })
+  $x.emit('UserSelectedAQuerySuggestion', suggestion, {
+    target: event.target
+  })
+}
+</script>
+```
+
+<Warning>
+  When using custom suggestion rendering without the `QuerySuggestion` component, you must manually emit the required events (`UserAcceptedAQuery`, `UserSelectedASuggestion`, and `UserSelectedAQuerySuggestion`).
+</Warning>
+
+## Limiting Suggestions
+
+Control how many suggestions are displayed:
+
+```vue
+<template>
+  <div>
+    <SearchInput />
+    <QuerySuggestions :maxItemsToRender="5" />
+  </div>
+</template>
+
+<script setup>
+import { QuerySuggestions } from '@empathyco/x-components/query-suggestions'
+import { SearchInput } from '@empathyco/x-components/search-box'
+</script>
+```
+
+## Handling Events
+
+React to suggestion selections:
+
+```vue
+<template>
+  <div>
+    <SearchInput />
+    <QuerySuggestions @UserSelectedAQuerySuggestion="handleSelection" />
+    <p v-if="selectedQuery">You selected: {{ selectedQuery }}</p>
+  </div>
+</template>
+
+<script setup>
+import { QuerySuggestions } from '@empathyco/x-components/query-suggestions'
+import { SearchInput } from '@empathyco/x-components/search-box'
+import { ref } from 'vue'
+
+const selectedQuery = ref('')
+
+const handleSelection = (suggestion) => {
+  selectedQuery.value = suggestion.query
+}
+</script>
+```
+
+## Integration with Search Flow
+
+Combine with search input and results for a complete search experience:
+
+```vue
+<template>
+  <div class="search-container">
+    <div class="search-box">
+      <SearchInput />
+      <ClearSearchInput />
+      <SearchButton>Search</SearchButton>
+    </div>
+    
+    <div class="suggestions-panel">
+      <QuerySuggestions #suggestion-content="{ suggestion, query }">
+        <div class="suggestion-item">
+          <span class="icon">🔍</span>
+          <Highlight :text="suggestion.query" :highlight="query" />
+        </div>
+      </QuerySuggestions>
+    </div>
+    
+    <ResultsList />
+  </div>
+</template>
+
+<script setup>
+import { QuerySuggestions } from '@empathyco/x-components/query-suggestions'
+import { SearchInput, ClearSearchInput, SearchButton } from '@empathyco/x-components/search-box'
+import { ResultsList } from '@empathyco/x-components/search'
+import { Highlight } from '@empathyco/x-components'
+</script>
+```
+
+## QuerySuggestion Component
+
+The individual `QuerySuggestion` component is used to render each suggestion:
+
+### Props
+
+<ParamField path="suggestion" type="Suggestion" required>
+  The suggestion object containing the query and associated data.
+</ParamField>
+
+### Basic Usage
+
+```vue
+<template>
+  <QuerySuggestion :suggestion="suggestion" />
+</template>
+
+<script setup>
+import { QuerySuggestion } from '@empathyco/x-components/query-suggestions'
+import { ref } from 'vue'
+
+const suggestion = ref({
+  modelName: 'QuerySuggestion',
+  query: 'leather jacket',
+  facets: [],
+})
+</script>
+```
+
+## Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Autocomplete" icon="sparkles">
+    Help users formulate better queries with suggestions
+  </Card>
+  <Card title="Query Refinement" icon="sliders">
+    Guide users toward more specific or popular searches
+  </Card>
+  <Card title="Typo Correction" icon="spell-check">
+    Suggest correct spellings for misspelled queries
+  </Card>
+  <Card title="Discovery" icon="compass">
+    Expose users to related searches they might not have considered
+  </Card>
+</CardGroup>
+
+<Note>
+  To use this component, the Empathize microservice must be implemented on the backend.
+</Note>
+
+## Styling Tips
+
+- Style the `.x-query-suggestions` class for the container
+- Style `.x-query-suggestion` class for individual suggestions
+- Use `:hover` and `:focus` states for better accessibility
+- Consider adding keyboard navigation (arrow keys) support
+- Highlight matching text to show relevance
+
+## Related Components
+
+<CardGroup cols={2}>
+  <Card title="SearchInput" icon="keyboard" href="/components/search-box">
+    The input field that triggers suggestions
+  </Card>
+  <Card title="ResultsList" icon="list" href="/components/search-results">
+    Display results after query selection
+  </Card>
+</CardGroup>

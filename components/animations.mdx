@@ -1,0 +1,386 @@
+---
+title: Animation Components
+description: Pre-built animation components for transitions and effects
+---
+
+Interface X provides a comprehensive set of animation components built on Vue's transition system. These components can be used standalone or as props for other components that accept animations.
+
+## Fade
+
+Simple fade in/out animation by changing opacity.
+
+### Props
+
+<ParamField path="appear" type="boolean" default="true">
+  Whether the transition should apply on initial render.
+</ParamField>
+
+### Usage
+
+```vue
+<template>
+  <Fade>
+    <div v-if="isVisible">Content that fades</div>
+  </Fade>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+import { Fade } from '@empathyco/x-components/animations'
+
+const isVisible = ref(true)
+</script>
+```
+
+### As an animation prop
+
+```vue
+<template>
+  <BaseModal :animation="Fade" :open="isOpen">
+    <p>Modal content</p>
+  </BaseModal>
+</template>
+
+<script setup>
+import { Fade } from '@empathyco/x-components/animations'
+import { BaseModal } from '@empathyco/x-components'
+</script>
+```
+
+## FadeAndSlide
+
+Combines fade with a horizontal slide animation. Works with transition groups for lists.
+
+### Props
+
+<ParamField path="tag" type="string">
+  HTML element tag for the transition-group wrapper.
+</ParamField>
+
+<ParamField path="appear" type="boolean" default="true">
+  Whether the transition should apply on initial render.
+</ParamField>
+
+### Usage
+
+```vue
+<template>
+  <FadeAndSlide tag="ul">
+    <li v-for="item in items" :key="item.id">{{ item.name }}</li>
+  </FadeAndSlide>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+import { FadeAndSlide } from '@empathyco/x-components/animations'
+
+const items = ref([
+  { id: 1, name: 'Item 1' },
+  { id: 2, name: 'Item 2' },
+])
+</script>
+```
+
+### With BaseGrid
+
+```vue
+<template>
+  <BaseGrid :animation="FadeAndSlide" :items="items">
+    <template #default="{ item }">{{ item.name }}</template>
+  </BaseGrid>
+</template>
+
+<script setup>
+import { FadeAndSlide } from '@empathyco/x-components/animations'
+import { BaseGrid } from '@empathyco/x-components'
+</script>
+```
+
+## StaggeredFadeAndSlide
+
+Animates list items with a staggered delay for a cascading effect.
+
+### Props
+
+<ParamField path="tag" type="string" default="'div'">
+  HTML element tag for the transition-group wrapper.
+</ParamField>
+
+<ParamField path="appear" type="boolean" default="true">
+  Whether the transition should apply on initial render.
+</ParamField>
+
+<ParamField path="stagger" type="number" default="25">
+  Delay in milliseconds between each item animation.
+</ParamField>
+
+### Usage
+
+```vue
+<template>
+  <StaggeredFadeAndSlide tag="ul" :stagger="50">
+    <li v-for="item in items" :key="item.id">{{ item.name }}</li>
+  </StaggeredFadeAndSlide>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+import { StaggeredFadeAndSlide } from '@empathyco/x-components/animations'
+
+const items = ref([
+  { id: 1, name: 'Item 1' },
+  { id: 2, name: 'Item 2' },
+  { id: 3, name: 'Item 3' },
+])
+</script>
+```
+
+### In search results
+
+```vue
+<template>
+  <BaseGrid :animation="StaggeredFadeAndSlide" :items="results">
+    <template #result="{ item }">
+      <ProductCard :product="item" />
+    </template>
+  </BaseGrid>
+</template>
+
+<script setup>
+import { StaggeredFadeAndSlide } from '@empathyco/x-components/animations'
+import { BaseGrid } from '@empathyco/x-components'
+</script>
+```
+
+## CrossFade
+
+Fades between two elements simultaneously using blend modes.
+
+### Props
+
+<ParamField path="appear" type="boolean" default="true">
+  Whether the transition should apply on initial render.
+</ParamField>
+
+### Usage
+
+```vue
+<template>
+  <CrossFade>
+    <div v-if="showA" key="a">Content A</div>
+    <div v-else key="b">Content B</div>
+  </CrossFade>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+import { CrossFade } from '@empathyco/x-components/animations'
+
+const showA = ref(true)
+</script>
+```
+
+### Switching images
+
+```vue
+<template>
+  <button @click="currentImage = (currentImage + 1) % images.length">
+    Next Image
+  </button>
+  <CrossFade>
+    <img :key="images[currentImage]" :src="images[currentImage]" />
+  </CrossFade>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+import { CrossFade } from '@empathyco/x-components/animations'
+
+const currentImage = ref(0)
+const images = ['image1.jpg', 'image2.jpg', 'image3.jpg']
+</script>
+```
+
+## CollapseHeight
+
+Animates height from 0 to auto, creating a smooth expand/collapse effect.
+
+### Props
+
+<ParamField path="appear" type="boolean" default="true">
+  Whether the transition should apply on initial render.
+</ParamField>
+
+### Usage
+
+```vue
+<template>
+  <button @click="isExpanded = !isExpanded">
+    {{ isExpanded ? 'Collapse' : 'Expand' }}
+  </button>
+  <CollapseHeight>
+    <div v-if="isExpanded">
+      <p>This content expands and collapses smoothly.</p>
+      <p>You can have multiple elements inside.</p>
+    </div>
+  </CollapseHeight>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+import { CollapseHeight } from '@empathyco/x-components/animations'
+
+const isExpanded = ref(false)
+</script>
+```
+
+### Customizing duration
+
+Use the `--x-collapse-height-transition-duration` CSS variable:
+
+```vue
+<template>
+  <CollapseHeight style="--x-collapse-height-transition-duration: 0.5s">
+    <div v-if="isExpanded">Content</div>
+  </CollapseHeight>
+</template>
+```
+
+<Warning>
+  CollapseHeight does not work with elements that have vertical margin, padding, or border. Apply these styles to child elements instead.
+</Warning>
+
+## CollapseWidth
+
+Animates width from 0 to auto, similar to CollapseHeight.
+
+### Props
+
+<ParamField path="appear" type="boolean" default="true">
+  Whether the transition should apply on initial render.
+</ParamField>
+
+### Usage
+
+```vue
+<template>
+  <button @click="isSidebarOpen = !isSidebarOpen">Toggle Sidebar</button>
+  <CollapseWidth>
+    <aside v-if="isSidebarOpen">
+      <nav>Sidebar content</nav>
+    </aside>
+  </CollapseWidth>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+import { CollapseWidth } from '@empathyco/x-components/animations'
+
+const isSidebarOpen = ref(true)
+</script>
+```
+
+## NoAnimation
+
+A special component that renders without any animation. Useful for conditionally disabling animations.
+
+### Usage
+
+```vue
+<template>
+  <BaseModal :animation="prefersReducedMotion ? NoAnimation : FadeAndSlide" :open="isOpen">
+    <p>Modal content</p>
+  </BaseModal>
+</template>
+
+<script setup>
+import { NoAnimation, FadeAndSlide } from '@empathyco/x-components/animations'
+import { BaseModal } from '@empathyco/x-components'
+
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+const isOpen = ref(false)
+</script>
+```
+
+## Animation Guidelines
+
+### Choosing the right animation
+
+- **Fade**: Simple show/hide, modals, overlays
+- **FadeAndSlide**: Lists, search results, filters
+- **StaggeredFadeAndSlide**: Product grids, long lists where you want to draw attention to items
+- **CrossFade**: Image galleries, content swapping
+- **CollapseHeight**: Accordions, expandable sections, dropdowns
+- **CollapseWidth**: Sidebars, slide-out panels
+
+### Performance tips
+
+1. **Use transform and opacity**: These properties are GPU-accelerated
+2. **Avoid animating layout properties**: Don't animate `width`, `height`, `top`, `left` when possible
+3. **Keep animations short**: 200-300ms is usually sufficient
+4. **Respect user preferences**: Check for `prefers-reduced-motion`
+5. **Use `appear="false"`**: Skip initial animations when loading large datasets
+
+### Accessibility
+
+```vue
+<script setup>
+import { ref, computed } from 'vue'
+import { FadeAndSlide, NoAnimation } from '@empathyco/x-components/animations'
+
+const prefersReducedMotion = ref(
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches
+)
+
+const animation = computed(() => 
+  prefersReducedMotion.value ? NoAnimation : FadeAndSlide
+)
+</script>
+
+<template>
+  <BaseGrid :animation="animation" :items="items">
+    <template #default="{ item }">{{ item }}</template>
+  </BaseGrid>
+</template>
+```
+
+## Custom Animations
+
+You can create custom animations using Vue's transition hooks:
+
+```vue
+<template>
+  <transition
+    name="custom-bounce"
+    @enter="onEnter"
+    @leave="onLeave"
+  >
+    <slot />
+  </transition>
+</template>
+
+<script setup>
+function onEnter(el, done) {
+  // Custom enter animation logic
+  done()
+}
+
+function onLeave(el, done) {
+  // Custom leave animation logic
+  done()
+}
+</script>
+
+<style>
+.custom-bounce-enter-active,
+.custom-bounce-leave-active {
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.custom-bounce-enter-from,
+.custom-bounce-leave-to {
+  transform: scale(0);
+  opacity: 0;
+}
+</style>
+```

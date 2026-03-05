@@ -1,0 +1,190 @@
+---
+title: "ResultsList"
+description: "Display search results in a customizable list format"
+---
+
+## Overview
+
+The `ResultsList` component renders a list of search results from the search module state. It provides flexible rendering options through slots and supports animations for a polished user experience.
+
+## Installation
+
+Import the `ResultsList` component from the search module:
+
+```javascript
+import { ResultsList } from '@empathyco/x-components/search'
+```
+
+## Props
+
+<ParamField path="animation" type="Vue Component" default="'ul'">
+  Animation component that will be used to animate the results list.
+</ParamField>
+
+## Events
+
+- **`UserReachedResultsListEnd`** - Emitted when the user scrolls to the end of the results list
+
+## Basic Usage
+
+Display search results with default styling:
+
+```vue
+<template>
+  <div>
+    <SearchInput />
+    <ResultsList />
+  </div>
+</template>
+
+<script setup>
+import { ResultsList } from '@empathyco/x-components/search'
+import { SearchInput } from '@empathyco/x-components/search-box'
+</script>
+```
+
+## With Animation
+
+Add animations to enhance the user experience:
+
+```vue
+<template>
+  <div>
+    <SearchInput />
+    <ResultsList :animation="FadeAndSlide" />
+  </div>
+</template>
+
+<script setup>
+import { ResultsList } from '@empathyco/x-components/search'
+import { SearchInput } from '@empathyco/x-components/search-box'
+import { FadeAndSlide } from '@empathyco/x-components/animations'
+</script>
+```
+
+## Custom Result Template
+
+Customize how individual results are displayed using the `result` slot:
+
+```vue
+<template>
+  <div>
+    <SearchInput />
+    <ResultsList #result="{ item }">
+      <div class="custom-result">
+        <img :src="item.images[0]" :alt="item.name" />
+        <h3>{{ item.name }}</h3>
+        <p class="price">{{ item.price }}</p>
+        <button @click="addToCart(item)">Add to Cart</button>
+      </div>
+    </ResultsList>
+  </div>
+</template>
+
+<script setup>
+import { SearchInput } from '@empathyco/x-components/search-box'
+import { ResultsList } from '@empathyco/x-components/search'
+
+const addToCart = (item) => {
+  // Add to cart logic
+}
+</script>
+```
+
+## Complete Control with Default Slot
+
+Use the default slot for complete control over the results rendering:
+
+```vue
+<template>
+  <div>
+    <SearchInput />
+    <ResultsList #default="{ items, animation }">
+      <BaseGrid :items="items" :animation="animation">
+        <template #result="{ item }">
+          <div class="grid-item">
+            <span>{{ item.name }}</span>
+            <span class="price">{{ item.price }}</span>
+          </div>
+        </template>
+      </BaseGrid>
+    </ResultsList>
+  </div>
+</template>
+
+<script setup>
+import { ResultsList } from '@empathyco/x-components/search'
+import { SearchInput } from '@empathyco/x-components/search-box'
+import { BaseGrid } from '@empathyco/x-components'
+</script>
+```
+
+## Data Injection Pattern
+
+Combine with other list components to create rich search experiences:
+
+```vue
+<template>
+  <div>
+    <SearchInput />
+    <ResultsList>
+      <PromotedsList>
+        <BannersList>
+          <template #result="{ item }">Result: {{ item.name }}</template>
+          <template #banner="{ item }">Banner: {{ item.title }}</template>
+          <template #promoted="{ item }">Promoted: {{ item.name }}</template>
+        </BannersList>
+      </PromotedsList>
+    </ResultsList>
+  </div>
+</template>
+
+<script setup>
+import { ResultsList, BannersList, PromotedsList } from '@empathyco/x-components/search'
+import { SearchInput } from '@empathyco/x-components/search-box'
+</script>
+```
+
+<Note>
+  The order of nested components determines how items are concatenated. Promoted items are inserted first, then banners are placed on top.
+</Note>
+
+## Provided Data
+
+The ResultsList component provides the following data to child components:
+
+- **`items`** - Array of search result items
+- **`query`** - The current search query (updated when search succeeds)
+- **`hasMoreItems`** - Boolean indicating if more results are available
+
+## Use Cases
+
+<CardGroup cols={2}>
+  <Card title="E-commerce Search" icon="shopping-cart">
+    Display product results with images, prices, and add-to-cart buttons
+  </Card>
+  <Card title="Content Discovery" icon="newspaper">
+    Show article or blog post results with thumbnails and excerpts
+  </Card>
+  <Card title="Multi-column Layouts" icon="table-cells">
+    Create grid layouts for visual product catalogs
+  </Card>
+  <Card title="Infinite Scroll" icon="arrows-up-down">
+    Implement pagination or infinite scrolling for large result sets
+  </Card>
+</CardGroup>
+
+<Warning>
+  To use this component, the Search service must be implemented on the backend.
+</Warning>
+
+## Related Components
+
+<CardGroup cols={2}>
+  <Card title="Facets" icon="filter" href="/components/facets">
+    Add filters to refine search results
+  </Card>
+  <Card title="SearchInput" icon="keyboard" href="/components/search-box">
+    Accept search queries from users
+  </Card>
+</CardGroup>

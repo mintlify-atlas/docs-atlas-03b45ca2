@@ -1,0 +1,382 @@
+---
+title: Adapter System Overview
+description: Understand Interface X's adapter architecture for connecting to search APIs
+---
+
+# Adapter System Overview
+
+Interface X uses an **adapter pattern** to communicate with any search API. Adapters handle the transformation of requests and responses between your application's data models and the API's format.
+
+## What is an Adapter?
+
+An adapter is a collection of **endpoint adapters**, one for each API endpoint you want to consume. Each endpoint adapter:
+
+1. **Transforms requests** from your app's format to the API's expected format
+2. **Makes HTTP requests** to the API
+3. **Transforms responses** from the API's format back to your app's format
+
+```typescript
+// High-level adapter structure
+export const myAdapter = {
+  search: searchEndpointAdapter,
+  suggestions: suggestionsEndpointAdapter,
+  recommendations: recommendationsEndpointAdapter,
+  // ... other endpoints
+}
+```
+
+## Core Concepts
+
+### Endpoint Adapter Factory
+
+The `endpointAdapterFactory` function creates endpoint adapters from configuration:
+
+```typescript
+import { endpointAdapterFactory } from '@empathyco/x-adapter'
+
+export const searchProducts = endpointAdapterFactory({
+  endpoint: 'https://api.example.com/search',
+  requestMapper: (appRequest) => apiRequest,
+  responseMapper: (apiResponse) => appResponse,
+})
+```
+
+Source: `/home/daytona/workspace/source/packages/x-adapter/src/endpoint-adapter/endpoint-adapter.factory.ts:1`
+
+### Request Mappers
+
+Transform your application's request into the API's expected format:
+
+```typescript
+interface AppSearchRequest {
+  query: string
+  limit: number
+}
+
+interface ApiSearchRequest {
+  q: string
+  max_results: number
+}
+
+const requestMapper = ({ query, limit }: AppSearchRequest): ApiSearchRequest => {
+  return {
+    q: query,
+    max_results: limit,
+  }
+}
+```
+
+### Response Mappers
+
+Transform the API's response into your application's expected format:
+
+```typescript
+interface ApiProduct {
+  id: number
+  title: string
+  price: number
+}
+
+interface AppProduct {
+  id: string
+  name: string
+  price: number
+}
+
+const responseMapper = ({ products }: ApiResponse): AppResponse => {
+  return {
+    results: products.map(product => ({
+      id: product.id.toString(),
+      name: product.title,
+      price: product.price,
+    })),
+  }
+}
+```
+
+## Creating an Endpoint Adapter
+
+Here's a complete example:
+
+<CodeGroup>
+```typescript Basic Example
+import { endpointAdapterFactory } from '@empathyco/x-adapter'
+
+// Define your types
+interface AppSearchRequest {
+  query: string
+}
+
+interface ApiSearchRequest {
+  q: string
+}
+
+interface ApiSearchResponse {
+  products: Array<{
+    id: number
+    title: string
+    price: number
+  }>
+  total: number
+}
+
+interface AppSearchResponse {
+  results: Array<{
+    id: string
+    name: string
+    price: number
+  }>
+  total: number
+}
+
+// Create the endpoint adapter
+export const searchProducts = endpointAdapterFactory<
+  AppSearchRequest,
+  AppSearchResponse
+>({
+  endpoint: 'https://api.example.com/search',
+  
+  requestMapper({ query }) {
+    return { q: query }
+  },
+  
+  responseMapper({ products, total }) {
+    return {
+      results: products.map(product => ({
+        id: product.id.toString(),
+        name: product.title,
+        price: product.price,
+      })),
+      total,
+    }
+  },
+})
+
+// Use it
+const response = await searchProducts({ query: 'shoes' })
+console.log(response.results)
+```
+</CodeGroup>
+
+Source: `/home/daytona/workspace/source/packages/x-adapter/README.md:69`
+
+## Advanced Features
+
+### Dynamic Endpoints
+
+Use path parameters in your endpoint URL:
+
+```typescript
+export const getProductById = endpointAdapterFactory({
+  // Use curly braces for parameters
+  endpoint: 'https://api.example.com/products/{id}',
+  // ... mappers
+})
+
+// Parameters are replaced from the request
+await getProductById({ id: '123' })
+// Calls: https://api.example.com/products/123
+```
+
+Or use a mapper function for complex logic:
+
+```typescript
+export const getProductById = endpointAdapterFactory({
+  endpoint: ({ id, lang }) => 
+    `https://api.example.com/${lang}/products/${id}`,
+  // ... mappers
+})
+```
+
+Source: `/home/daytona/workspace/source/packages/x-adapter/README.md:143`
+
+### Custom HTTP Clients
+
+By default, adapters use the Fetch API. You can provide a custom HTTP client:
+
+```typescript
+import axios from 'axios'
+import type { HttpClient } from '@empathyco/x-adapter'
+
+const axiosHttpClient: HttpClient = (endpoint, options) =>
+  axios
+    .get(endpoint, { params: options?.parameters })
+    .then(response => response.data)
+
+export const searchProducts = endpointAdapterFactory({
+  endpoint: 'https://api.example.com/search',
+  httpClient: axiosHttpClient,
+  // ... mappers
+})
+```
+
+Source: `/home/daytona/workspace/source/packages/x-adapter/README.md:186`
+
+### Default Request Options
+
+Set default options for all requests:
+
+```typescript
+export const searchProducts = endpointAdapterFactory({
+  endpoint: 'https://api.example.com/search',
+  defaultRequestOptions: {
+    id: 'search', // Identifier for the request
+    properties: {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': 'your-api-key',
+      },
+    },
+    parameters: {
+      lang: 'en',
+      internal: true,
+    },
+  },
+  // ... mappers
+})
+```
+
+### Extending Adapters
+
+You can extend an existing adapter to create variations:
+
+```typescript
+const baseSearch = endpointAdapterFactory({
+  endpoint: 'https://api.example.com/search',
+  requestMapper,
+  responseMapper,
+})
+
+// Extend with different default parameters
+const limitedSearch = baseSearch.extends({
+  defaultRequestOptions: {
+    parameters: {
+      limit: 10,
+    },
+  },
+})
+```
+
+Source: `/home/daytona/workspace/source/packages/x-adapter/README.md:642`
+
+## Schema Mappers
+
+For simple field mapping, use **schema mappers** instead of writing mapper functions:
+
+```typescript
+import { schemaMapperFactory } from '@empathyco/x-adapter'
+
+const requestMapper = schemaMapperFactory<AppUserRequest, ApiUserRequest>({
+  q: 'query', // API field: source path
+})
+
+const responseMapper = schemaMapperFactory<ApiUserResponse, AppUserResponse>({
+  people: ({ users }) => 
+    users.map(user => ({
+      id: user.id.toString(),
+      name: user.firstName,
+    })),
+  total: 'total',
+})
+```
+
+Source: `/home/daytona/workspace/source/packages/x-adapter/README.md:275`
+
+### SubSchemas
+
+Reuse schemas for nested objects:
+
+```typescript
+import { schemaMapperFactory } from '@empathyco/x-adapter'
+import type { Schema } from '@empathyco/x-adapter'
+
+// Define a reusable address schema
+const addressSchema: Schema<ApiAddress, AppAddress> = {
+  displayName: source => `${source.address}, ${source.city}`,
+  city: 'city',
+  postalCode: source => Number.parseInt(source.postalCode),
+}
+
+// Use it in a user schema
+const userSchema: Schema<ApiUser, AppUser> = {
+  id: 'id',
+  contact: {
+    email: 'email',
+    homeAddress: {
+      $subSchema: addressSchema,
+      $path: 'address',
+    },
+  },
+}
+```
+
+Source: `/home/daytona/workspace/source/packages/x-adapter/README.md:302`
+
+## Mutable Schemas
+
+Create schemas that can be modified or extended:
+
+```typescript
+import { createMutableSchema } from '@empathyco/x-adapter'
+
+const baseSchema = createMutableSchema<ApiBase, AppBase>({
+  id: ({ id }) => id.toString(),
+  name: 'title',
+})
+
+// Extend for different use cases
+const productSchema = baseSchema.$extends<ApiProduct, AppProduct>({
+  price: 'price',
+  category: 'category',
+})
+
+// Override fields globally
+baseSchema.$override({
+  name: 'name', // Changed from 'title' to 'name'
+})
+
+// Replace completely
+baseSchema.$replace({
+  id: 'id',
+  description: 'desc',
+})
+```
+
+Source: `/home/daytona/workspace/source/packages/x-adapter/README.md:410`
+
+## Available Adapters
+
+<CardGroup cols={2}>
+  <Card title="Platform Adapter" href="/integration/platform-adapter" icon="cloud">
+    Pre-built adapter for Empathy Platform API
+  </Card>
+  
+  <Card title="Custom API" href="/integration/custom-api" icon="code">
+    Create adapters for custom search APIs
+  </Card>
+</CardGroup>
+
+## Package Information
+
+<Info>
+  The adapter system is provided by the `@empathyco/x-adapter` package.
+  
+  **Installation:**
+  ```bash
+  npm install @empathyco/x-adapter
+  ```
+  
+  **Documentation:** [GitHub](https://github.com/empathyco/x/tree/main/packages/x-adapter)
+</Info>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Platform Adapter" href="/integration/platform-adapter" icon="cloud">
+    Use the pre-built Empathy Platform adapter
+  </Card>
+  
+  <Card title="Custom API Integration" href="/integration/custom-api" icon="wrench">
+    Build a custom adapter for your API
+  </Card>
+</CardGroup>

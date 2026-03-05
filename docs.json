@@ -1,122 +1,139 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "Interface X",
+  "theme": "palm",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#94cb04",
+    "light": "#545454",
+    "dark": "#94cb04"
   },
-  "favicon": "/favicon.svg",
+  "favicon": "https://media.brand.dev/288cc7c4-5cef-4376-950b-bdf0083eedae.png",
+  "logo": {
+    "light": "/logo.png",
+    "dark": "/logo.png"
+  },
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/empathyco/x"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/empathyco/x"
+    }
+  },
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Documentation",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Getting Started",
             "pages": [
-              "index",
-              "quickstart",
-              "development"
+              "introduction",
+              "installation",
+              "quickstart"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Core Concepts",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "concepts/architecture",
+              "concepts/x-modules",
+              "concepts/event-system",
+              "concepts/state-management"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "Search Components",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
+              "components/search-box",
+              "components/search-results",
+              "components/facets",
+              "components/query-suggestions"
             ]
           },
           {
-            "group": "AI tools",
+            "group": "Discovery Components",
             "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "components/recommendations",
+              "components/popular-searches",
+              "components/next-queries",
+              "components/related-tags",
+              "components/queries-preview"
+            ]
+          },
+          {
+            "group": "Personalization",
+            "pages": [
+              "components/history-queries",
+              "components/empathize",
+              "components/identifier-results"
+            ]
+          },
+          {
+            "group": "UI Components",
+            "pages": [
+              "components/base-components",
+              "components/animations",
+              "components/scroll",
+              "components/modals-panels"
+            ]
+          },
+          {
+            "group": "Styling & Theming",
+            "pages": [
+              "styling/design-system",
+              "styling/tailwind-plugin",
+              "styling/customization"
+            ]
+          },
+          {
+            "group": "Integration",
+            "pages": [
+              "integration/adapters",
+              "integration/platform-adapter",
+              "integration/custom-api"
+            ]
+          },
+          {
+            "group": "Advanced",
+            "pages": [
+              "advanced/url-management",
+              "advanced/tagging",
+              "advanced/experience-controls",
+              "advanced/semantic-queries"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "API Reference",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Packages",
             "pages": [
-              "api-reference/introduction"
+              "api/x-components",
+              "api/x-adapter",
+              "api/x-types",
+              "api/x-tailwindcss",
+              "api/x-utils"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "X Modules",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "api/modules/search",
+              "api/modules/facets",
+              "api/modules/recommendations",
+              "api/modules/history-queries",
+              "api/modules/tagging",
+              "api/modules/url"
             ]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
-  },
-  "contextual": {
-    "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
+    ]
   }
 }

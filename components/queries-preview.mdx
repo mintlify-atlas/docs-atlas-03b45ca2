@@ -1,0 +1,331 @@
+---
+title: "Query Preview"
+description: "Display a preview of search results for a query without performing a full search"
+---
+
+## Overview
+
+The `QueryPreview` component retrieves and displays a preview of search results for a specific query without navigating away or performing a full search. This is perfect for implementing hover previews, dropdown suggestions with results, or "peek" functionality that shows users what results they'll get before committing to a search.
+
+## When to Use
+
+Use the QueryPreview component to:
+
+- Show result previews when hovering over query suggestions
+- Display a subset of results in dropdown panels
+- Implement "instant preview" functionality
+- Help users make informed decisions before clicking a suggestion
+- Reduce friction by showing results before full navigation
+
+## Installation
+
+Import the component from the queries-preview module:
+
+```javascript
+import { QueryPreview } from '@empathyco/x-components/queries-preview'
+```
+
+## Basic Usage
+
+The component requires a `queryPreviewInfo` object that defines what to preview:
+
+```vue
+<template>
+  <QueryPreview :queryPreviewInfo="queryPreviewInfo" />
+</template>
+
+<script setup>
+import { QueryPreview } from '@empathyco/x-components/queries-preview'
+import { reactive } from 'vue'
+
+const queryPreviewInfo = reactive({ query: 'sandals' })
+</script>
+```
+
+## Props
+
+<ParamField path="queryPreviewInfo" type="QueryPreviewInfo" required>
+  The information about the request for the query preview. Must include at minimum a `query` property. Can also include `filters` and `extraParams`.
+  
+  **Structure:**
+  ```typescript
+  {
+    query: string
+    filters?: string[]
+    extraParams?: Record<string, unknown>
+  }
+  ```
+</ParamField>
+
+<ParamField path="queryFeature" type="QueryFeature" default="undefined">
+  The origin property for the request. Used for analytics and tracking to identify where the query preview was triggered from.
+</ParamField>
+
+<ParamField path="maxItemsToRender" type="number" default="undefined">
+  Number of query preview results to be rendered. Limits the results displayed even if more are available.
+</ParamField>
+
+<ParamField path="loadWhenVisible" type="boolean" default="false">
+  Controls whether the query preview request should be triggered only when the component becomes visible in the viewport. Useful for performance optimization.
+</ParamField>
+
+<ParamField path="debounceTimeMs" type="number" default="0">
+  Debounce time in milliseconds for triggering the search requests. Set to 0 for immediate requests (common in pre-search). Use 250ms or higher for empathize/search-as-you-type scenarios.
+</ParamField>
+
+<ParamField path="persistInCache" type="boolean" default="false">
+  Controls whether the QueryPreview should remain in the state cache when the component is destroyed. Set to true to cache results for faster re-display.
+</ParamField>
+
+## Slots
+
+### Default Slot
+
+Provide a custom layout for displaying the preview results and metadata.
+
+**Slot Props:**
+- `queryPreviewInfo` (QueryPreviewInfo) - The query preview info object
+- `results` (Result[]) - Array of result objects
+- `totalResults` (number) - Total number of results available
+- `displayTagging` (unknown) - Display tagging information
+- `queryTagging` (unknown) - Query tagging information
+
+```vue
+<QueryPreview :queryPreviewInfo="queryPreviewInfo" #default="{ totalResults, results }">
+  <section>
+    <p>Total results: {{ totalResults }}</p>
+    <article v-for="result in results" :key="result.id">
+      <BaseResultLink :result="result">
+        <BaseResultImage :result="result" />
+        <h3>{{ result.name }}</h3>
+      </BaseResultLink>
+    </article>
+  </section>
+</QueryPreview>
+```
+
+### result Slot
+
+Customize only the result items without modifying the list structure.
+
+**Slot Props:**
+- `result` (Result) - Individual result object
+
+```vue
+<QueryPreview :queryPreviewInfo="queryPreviewInfo" #result="{ result }">
+  <span>{{ result.id }}</span>
+  <span>{{ result.name }}</span>
+</QueryPreview>
+```
+
+## Events
+
+### X Bus Events
+
+The component emits these events through the event bus:
+
+- **QueryPreviewRequestUpdated**: Emitted when the component mounts and when request properties change. Payload is the `queryPreviewRequest` object.
+- **QueryPreviewMounted**: Emitted when a cached query preview is mounted
+- **QueryPreviewUnmounted**: Emitted when the component is destroyed
+
+### Vue Events
+
+The component also emits standard Vue events:
+
+- **load**: Emitted when the query results have been successfully loaded. Payload is the `queryPreviewHash`.
+- **error**: Emitted if there's an error retrieving the query results. Payload is the `queryPreviewHash`.
+
+## Examples
+
+### Basic Preview
+
+Simple query preview with default rendering (shows result names):
+
+```vue
+<template>
+  <QueryPreview :queryPreviewInfo="queryPreviewInfo" />
+</template>
+
+<script setup>
+import { QueryPreview } from '@empathyco/x-components/queries-preview'
+import { reactive } from 'vue'
+
+const queryPreviewInfo = reactive({ query: 'sandals' })
+</script>
+```
+
+### Custom Result Layout
+
+Display results in a custom layout with images:
+
+```vue
+<template>
+  <QueryPreview :queryPreviewInfo="queryPreviewInfo" #default="{ totalResults, results }">
+    <section>
+      <p class="count">Total results: {{ totalResults }}</p>
+      <SlidingPanel :resetOnContentChange="false">
+        <article
+          v-for="result in results"
+          :key="result.id"
+          class="x-result"
+        >
+          <BaseResultLink :result="result">
+            <BaseResultImage :result="result" class="x-result__picture" />
+            <h3 class="x-title3">{{ result.name }}</h3>
+          </BaseResultLink>
+        </article>
+      </SlidingPanel>
+    </section>
+  </QueryPreview>
+</template>
+
+<script setup>
+import { QueryPreview } from '@empathyco/x-components/queries-preview'
+import { BaseResultImage, BaseResultLink, SlidingPanel } from '@empathyco/x-components'
+import { reactive } from 'vue'
+
+const queryPreviewInfo = reactive({ query: 'flip-flops' })
+</script>
+```
+
+### Limited Results with Grid
+
+Limit preview to 4 items and display in a grid:
+
+```vue
+<template>
+  <QueryPreview
+    :maxItemsToRender="4"
+    :queryPreviewInfo="queryPreviewInfo"
+    #default="{ results }"
+  >
+    <BaseGrid #default="{ item }" :items="results">
+      <BaseResultLink :result="item">
+        <BaseResultImage :result="item" />
+        <p class="name">{{ item.name }}</p>
+      </BaseResultLink>
+    </BaseGrid>
+  </QueryPreview>
+</template>
+
+<script setup>
+import { BaseGrid, BaseResultImage, BaseResultLink } from '@empathyco/x-components'
+import { QueryPreview } from '@empathyco/x-components/queries-preview'
+import { reactive } from 'vue'
+
+const queryPreviewInfo = reactive({ query: 'flip-flops' })
+</script>
+```
+
+### Lazy Loading with Debounce
+
+Load preview only when visible, with debounced requests:
+
+```vue
+<template>
+  <QueryPreview
+    :queryPreviewInfo="queryPreviewInfo"
+    :loadWhenVisible="true"
+    :debounceTimeMs="250"
+    :persistInCache="true"
+    #default="{ results }"
+  >
+    <div class="preview-results">
+      <article v-for="result in results" :key="result.id">
+        {{ result.name }}
+      </article>
+    </div>
+  </QueryPreview>
+</template>
+
+<script setup>
+import { QueryPreview } from '@empathyco/x-components/queries-preview'
+import { reactive } from 'vue'
+
+const queryPreviewInfo = reactive({ query: 'shoes' })
+</script>
+```
+
+### Custom Result Item
+
+Customize individual result rendering:
+
+```vue
+<template>
+  <QueryPreview :queryPreviewInfo="queryPreviewInfo" #result="{ result }">
+    <div class="custom-result">
+      <span class="result-id">{{ result.id }}</span>
+      <span class="result-name">{{ result.name }}</span>
+      <span class="result-price">{{ result.price }}</span>
+    </div>
+  </QueryPreview>
+</template>
+
+<script setup>
+import { QueryPreview } from '@empathyco/x-components/queries-preview'
+import { reactive } from 'vue'
+
+const queryPreviewInfo = reactive({ query: 'flip-flops' })
+</script>
+```
+
+## Integration Tips
+
+<Tip>
+  Use QueryPreview with query suggestion components to show result previews on hover. This creates a powerful "instant search" experience.
+</Tip>
+
+<Note>
+  Query previews are cached in the state by default. If you want previews to persist after the component unmounts (for faster re-display), set `persistInCache` to true.
+</Note>
+
+<Warning>
+  Be mindful of performance when using multiple QueryPreview components. Use `loadWhenVisible` and `debounceTimeMs` to optimize API calls.
+</Warning>
+
+## Query Preview Info
+
+The `queryPreviewInfo` object structure:
+
+```typescript
+interface QueryPreviewInfo {
+  query: string                       // The search query
+  filters?: string[]                  // Optional filter IDs to apply
+  extraParams?: Record<string, any>   // Additional request parameters
+}
+```
+
+### Example with Filters
+
+```javascript
+const queryPreviewInfo = reactive({
+  query: 'shoes',
+  filters: ['brand:nike', 'color:red'],
+  extraParams: {
+    warehouse: 'EU',
+    lang: 'en'
+  }
+})
+```
+
+## Styling
+
+The component uses these CSS classes:
+
+- `.x-query-preview-wrapper__default-content` - Default content wrapper
+- `.x-query-preview-wrapper__slot-content` - Custom slot content wrapper
+- `.x-query-preview` - Results list container
+- `.x-query-preview__item` - Individual result item
+
+## Performance Optimization
+
+1. **Lazy Loading**: Use `loadWhenVisible` for previews that aren't immediately visible
+2. **Debouncing**: Set `debounceTimeMs` to reduce API calls during rapid interactions
+3. **Caching**: Enable `persistInCache` to reuse previous preview results
+4. **Limit Results**: Use `maxItemsToRender` to reduce payload size
+
+## Related Components
+
+- [Query Suggestions](/components/query-suggestions) - Autocomplete suggestions (pairs well with previews)
+- [Next Queries](/components/next-queries) - Related query suggestions
+- [Search Results](/components/search-results) - Full search results display

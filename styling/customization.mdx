@@ -1,0 +1,427 @@
+---
+title: Customization Guide
+description: Customize Interface X's design system to match your brand
+---
+
+# Customization Guide
+
+Interface X's design system is built to be customizable at multiple levels, from theme tokens to component styles.
+
+## Customization Approaches
+
+There are several ways to customize the design system:
+
+### 1. CSS Custom Properties (Runtime)
+
+The easiest way to customize component colors is using CSS custom properties. Components use CSS variables with fallback values:
+
+```css
+/* Override button colors */
+:root {
+  --button-color-50: #0086B2;
+  --button-color-75: #006485;
+}
+
+/* Or scope to specific components */
+.my-custom-button {
+  --button-color-50: #D44A6F;
+  --button-color-75: #A42748;
+}
+```
+
+This approach:
+- Works at runtime (no rebuild needed)
+- Can be scoped to specific components
+- Supports dynamic theming
+- Limited to properties that use CSS variables
+
+### 2. Extend Tailwind Theme (Build Time)
+
+Extend the plugin's theme in your `tailwind.config.ts`:
+
+```typescript tailwind.config.ts
+import xTailwindCss from '@empathyco/x-tailwindcss'
+
+export default {
+  content: ['./src/**/*.{vue,js,ts,jsx,tsx}'],
+  plugins: [xTailwindCss],
+  theme: {
+    extend: {
+      // Extend the x theme namespace
+      x: {
+        colors: {
+          // Add custom brand colors
+          brand: {
+            primary: '#0066CC',
+            secondary: '#FF6B35',
+          },
+        },
+        spacing: {
+          // Add custom spacing values
+          18: '18px',
+          72: '72px',
+        },
+      },
+    },
+  },
+}
+```
+
+### 3. Override Default Styles
+
+Add custom CSS that overrides component styles:
+
+```css custom.css
+/* Override button styles */
+.x-button {
+  border-radius: 24px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.x-button-lead {
+  background-color: #0066CC;
+  border-color: #0066CC;
+}
+
+.x-button-lead:hover {
+  background-color: #0052A3;
+  border-color: #0052A3;
+}
+```
+
+Make sure to import this CSS after Tailwind:
+
+```css main.css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import './custom.css';
+```
+
+### 4. Create Custom Components
+
+Build your own components using the theme tokens:
+
+```vue MyButton.vue
+<template>
+  <button class="my-button">
+    <slot />
+  </button>
+</template>
+
+<style>
+.my-button {
+  display: inline-flex;
+  align-items: center;
+  gap: theme('x.spacing.8');
+  padding: theme('x.spacing.12') theme('x.spacing.24');
+  
+  background-color: theme('x.colors.lead.50');
+  color: theme('x.colors.neutral.0');
+  
+  font-family: theme('x.fontFamily.main');
+  font-size: theme('x.fontSize.md');
+  font-weight: theme('x.fontWeight.bold');
+  
+  border-radius: theme('x.borderRadius.md');
+  border: theme('x.borderWidth.1') solid theme('x.colors.lead.50');
+  
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.my-button:hover {
+  background-color: theme('x.colors.lead.75');
+  border-color: theme('x.colors.lead.75');
+}
+</style>
+```
+
+## Common Customization Scenarios
+
+### Brand Colors
+
+Replace the default color palette with your brand colors:
+
+<Steps>
+  <Step title="Define your color variables">
+    ```css :root
+    :root {
+      /* Primary brand color */
+      --brand-primary-25: #E6F2FF;
+      --brand-primary-50: #0066CC;
+      --brand-primary-75: #004C99;
+      
+      /* Secondary brand color */
+      --brand-secondary-25: #FFE8DC;
+      --brand-secondary-50: #FF6B35;
+      --brand-secondary-75: #CC5529;
+    }
+    ```
+  </Step>
+  
+  <Step title="Apply to components">
+    ```css component-overrides.css
+    .x-button {
+      --button-color-50: var(--brand-primary-50);
+      --button-color-75: var(--brand-primary-75);
+    }
+    
+    .x-button-accent {
+      --button-color-50: var(--brand-secondary-50);
+      --button-color-75: var(--brand-secondary-75);
+    }
+    ```
+  </Step>
+</Steps>
+
+### Typography
+
+Customize fonts throughout the interface:
+
+```css
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
+:root {
+  --font-main: 'Roboto', sans-serif;
+}
+
+.x-button,
+.x-input,
+.x-suggestion {
+  font-family: var(--font-main);
+}
+```
+
+Or extend the theme:
+
+```typescript tailwind.config.ts
+export default {
+  theme: {
+    extend: {
+      x: {
+        fontFamily: {
+          main: 'Roboto, sans-serif',
+        },
+      },
+    },
+  },
+}
+```
+
+### Spacing & Sizing
+
+Adjust component sizes and spacing:
+
+```css
+/* Larger buttons */
+.x-button {
+  padding: theme('x.spacing.16') theme('x.spacing.32');
+  font-size: theme('x.fontSize.lg');
+}
+
+/* Tighter spacing for suggestion lists */
+.x-suggestion-group {
+  gap: theme('x.spacing.4');
+}
+```
+
+### Border Radius
+
+Change border radius for all components:
+
+```css
+.x-button,
+.x-input,
+.x-badge,
+.x-tag {
+  border-radius: theme('x.borderRadius.lg'); /* 16px */
+}
+```
+
+Or make everything pill-shaped:
+
+```css
+.x-button,
+.x-badge,
+.x-tag {
+  border-radius: theme('x.borderRadius.full'); /* 99999px */
+}
+```
+
+### Dark Mode
+
+Implement dark mode using Tailwind's dark mode support:
+
+```typescript tailwind.config.ts
+export default {
+  darkMode: 'class', // or 'media'
+  // ... rest of config
+}
+```
+
+```css
+/* Light mode (default) */
+.x-button {
+  background-color: theme('x.colors.neutral.90');
+  color: theme('x.colors.neutral.0');
+}
+
+/* Dark mode */
+.dark .x-button {
+  background-color: theme('x.colors.neutral.10');
+  color: theme('x.colors.neutral.90');
+}
+
+.dark .x-input {
+  background-color: theme('x.colors.neutral.75');
+  color: theme('x.colors.neutral.0');
+  border-color: theme('x.colors.neutral.50');
+}
+```
+
+## Accessing Theme Tokens
+
+### In CSS
+
+Use the `theme()` function:
+
+```css
+.my-component {
+  color: theme('x.colors.lead.50');
+  padding: theme('x.spacing.16');
+  font-size: theme('x.fontSize.md');
+}
+```
+
+### In Tailwind Classes
+
+Theme tokens are not directly accessible as utility classes. Use standard Tailwind utilities or create custom ones:
+
+```typescript tailwind.config.ts
+export default {
+  theme: {
+    extend: {
+      colors: {
+        // Expose x colors as standard Tailwind colors
+        lead: {
+          25: '#BBC9CF',
+          50: '#5E7782',
+          75: '#243D48',
+        },
+      },
+    },
+  },
+}
+```
+
+Then use as utilities:
+
+```html
+<div class="bg-lead-50 text-white">
+  Lead colored background
+</div>
+```
+
+### In JavaScript/TypeScript
+
+For dynamic theming, read CSS variables:
+
+```typescript
+const primaryColor = getComputedStyle(document.documentElement)
+  .getPropertyValue('--button-color-50')
+  .trim()
+```
+
+## Component-Specific Customization
+
+### Buttons
+
+```css
+/* All buttons */
+.x-button {
+  font-weight: theme('x.fontWeight.regular');
+  text-transform: none;
+}
+
+/* Outlined variant */
+.x-button-outlined {
+  border-width: theme('x.borderWidth.2');
+}
+
+/* Ghost variant */
+.x-button-ghost {
+  background-color: transparent;
+  opacity: 0.8;
+}
+```
+
+### Inputs
+
+```css
+.x-input {
+  border-radius: theme('x.borderRadius.sm');
+  padding: theme('x.spacing.12') theme('x.spacing.16');
+}
+
+.x-input:focus {
+  outline: 2px solid theme('x.colors.lead.50');
+  outline-offset: 2px;
+}
+```
+
+### Suggestions
+
+```css
+.x-suggestion {
+  padding: theme('x.spacing.12') theme('x.spacing.16');
+  border-radius: theme('x.borderRadius.sm');
+}
+
+.x-suggestion:hover {
+  background-color: theme('x.colors.neutral.10');
+}
+
+.x-suggestion.x-selected {
+  background-color: theme('x.colors.lead.25');
+  color: theme('x.colors.lead.75');
+}
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use CSS custom properties for runtime theming">
+    CSS custom properties allow you to change colors dynamically without rebuilding. This is ideal for multi-tenant applications or user-customizable themes.
+  </Accordion>
+  
+  <Accordion title="Extend the theme for compile-time customization">
+    Use Tailwind's theme extension for values that won't change at runtime. This provides better tree-shaking and smaller bundle sizes.
+  </Accordion>
+  
+  <Accordion title="Maintain consistent spacing">
+    Use the spacing scale consistently. Avoid arbitrary values like `12.5px` - stick to the predefined scale.
+  </Accordion>
+  
+  <Accordion title="Test across breakpoints">
+    Ensure your customizations work well on mobile, tablet, and desktop. Use Tailwind's responsive modifiers as needed.
+  </Accordion>
+  
+  <Accordion title="Document your customizations">
+    Keep a record of what you've customized and why. This helps maintain consistency and onboard new team members.
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Design System" href="/styling/design-system" icon="palette">
+    Learn about the design system architecture
+  </Card>
+  
+  <Card title="Components" href="/components/overview" icon="puzzle-piece">
+    Explore available components
+  </Card>
+</CardGroup>

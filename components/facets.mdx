@@ -1,0 +1,315 @@
+---
+title: "Facets"
+description: "Render filterable facets to refine search results"
+---
+
+## Overview
+
+The `Facets` component renders a list of facets (filters) that allow users to refine their search results. Each facet can be customized individually using slots, making it highly flexible for different filtering needs.
+
+## Installation
+
+Import the `Facets` component from the facets module:
+
+```javascript
+import { Facets } from '@empathyco/x-components/facets'
+```
+
+## Props
+
+<ParamField path="facetsIds" type="Array<string>">
+  Array of facet IDs used to get the selected filters for those facets.
+</ParamField>
+
+<ParamField path="alwaysVisible" type="boolean" default="false">
+  Flag to render the component even if there are no filters selected.
+</ParamField>
+
+<ParamField path="animation" type="Vue Component" default="'ul'">
+  Animation component that will be used to animate the facets.
+</ParamField>
+
+<ParamField path="renderableFacets" type="string">
+  Comma-separated list of facet IDs to include or exclude. Prefix with `!` to exclude.
+  
+  **Examples:**
+  - `"brand, category"` - Only render brand and category facets
+  - `"!price, !color"` - Render all facets except price and color
+</ParamField>
+
+## Slots
+
+The Facets component provides multiple slot options for customization:
+
+### Default Slot (Required)
+
+Used for rendering facets without specific customization:
+
+```vue
+<template #default="{ facet, selectedFilters }">
+  <!-- Your facet rendering here -->
+</template>
+```
+
+### Facet ID Slot
+
+Customize specific facets by their ID:
+
+```vue
+<template #color="{ facet, selectedFilters }">
+  <!-- Custom rendering for color facet -->
+</template>
+```
+
+### Model Name Slot
+
+Customize facets by their model type:
+
+```vue
+<template #hierarchical-facet="{ facet, selectedFilters }">
+  <!-- Custom rendering for all hierarchical facets -->
+</template>
+```
+
+## Basic Usage
+
+Display facets with a default layout:
+
+```vue
+<template>
+  <Facets>
+    <template #default="{ facet, selectedFilters }">
+      <h3>{{ facet.label }}</h3>
+      <span v-if="selectedFilters.length > 0">
+        {{ selectedFilters.length }} selected
+      </span>
+      <ul>
+        <li v-for="filter in facet.filters" :key="filter.id">
+          {{ filter.label }} ({{ filter.totalResults }})
+        </li>
+      </ul>
+    </template>
+  </Facets>
+</template>
+
+<script setup>
+import { Facets } from '@empathyco/x-components/facets'
+</script>
+```
+
+## Customizing Specific Facets
+
+Provide different rendering for specific facets:
+
+```vue
+<template>
+  <Facets>
+    <!-- Custom color facet with swatches -->
+    <template #color="{ facet, selectedFilters }">
+      <h3>{{ facet.label }}</h3>
+      <div class="color-swatches">
+        <div 
+          v-for="filter in facet.filters" 
+          :key="filter.id"
+          class="swatch"
+          :style="{ backgroundColor: filter.value }"
+          :class="{ selected: filter.selected }"
+        />
+      </div>
+    </template>
+
+    <!-- Custom hierarchical category facet -->
+    <template #category="{ facet }">
+      <h3>{{ facet.label }}</h3>
+      <ul>
+        <li v-for="filter in facet.filters" :key="filter.id">
+          {{ filter.label }}
+          <ul v-if="filter.children?.length">
+            <li v-for="child in filter.children" :key="child.id">
+              {{ child.label }}
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </template>
+
+    <!-- Default for all other facets -->
+    <template #default="{ facet }">
+      <h3>{{ facet.label }}</h3>
+      <ul>
+        <li v-for="filter in facet.filters" :key="filter.id">
+          {{ filter.label }}
+        </li>
+      </ul>
+    </template>
+  </Facets>
+</template>
+
+<script setup>
+import { Facets } from '@empathyco/x-components/facets'
+</script>
+```
+
+## Filtering Which Facets to Render
+
+### Include Specific Facets
+
+Only render certain facets:
+
+```vue
+<template>
+  <Facets renderableFacets="color, brand, size">
+    <template #default="{ facet }">
+      <h3>{{ facet.label }}</h3>
+      <!-- Facet content -->
+    </template>
+  </Facets>
+</template>
+
+<script setup>
+import { Facets } from '@empathyco/x-components/facets'
+</script>
+```
+
+### Exclude Specific Facets
+
+Render all facets except specified ones:
+
+```vue
+<template>
+  <Facets renderableFacets="!price, !rating">
+    <template #default="{ facet }">
+      <h3>{{ facet.label }}</h3>
+      <!-- Facet content -->
+    </template>
+  </Facets>
+</template>
+
+<script setup>
+import { Facets } from '@empathyco/x-components/facets'
+</script>
+```
+
+## Complete Facets Example
+
+Integrate with filter components for a full filtering experience:
+
+```vue
+<template>
+  <Facets>
+    <!-- Default facets with search and multi-select -->
+    <template #default="{ facet, selectedFilters }">
+      <h3>{{ facet.label }}</h3>
+      <span v-if="selectedFilters.length">
+        {{ selectedFilters.length }} selected
+      </span>
+      <FiltersSearch :filters="facet.filters">
+        <MultiSelectFilters v-slot="{ filter }">
+          <SimpleFilter :filter="filter" />
+        </MultiSelectFilters>
+      </FiltersSearch>
+    </template>
+
+    <!-- Hierarchical category facet -->
+    <template #category="{ facet }">
+      <h3>{{ facet.label }}</h3>
+      <Filters v-slot="{ filter }" :filters="facet.filters">
+        <HierarchicalFilter :filter="filter" />
+      </Filters>
+    </template>
+
+    <!-- Price range facet -->
+    <template #price="{ facet }">
+      <h3>{{ facet.label }}</h3>
+      <Filters v-slot="{ filter }" :filters="facet.filters">
+        <NumberRangeFilter :filter="filter">
+          <BasePriceFilterLabel :filter="filter" />
+        </NumberRangeFilter>
+      </Filters>
+    </template>
+  </Facets>
+</template>
+
+<script setup>
+import {
+  Facets,
+  Filters,
+  FiltersSearch,
+  HierarchicalFilter,
+  MultiSelectFilters,
+  NumberRangeFilter,
+  SimpleFilter,
+} from '@empathyco/x-components/facets'
+import { BasePriceFilterLabel } from '@empathyco/x-components'
+</script>
+```
+
+## Filter Components
+
+The Facets component works seamlessly with various filter components:
+
+### SimpleFilter
+
+Basic checkbox-style filter:
+
+```vue
+<SimpleFilter :filter="filter" />
+```
+
+### HierarchicalFilter
+
+For nested category structures:
+
+```vue
+<HierarchicalFilter :filter="filter" />
+```
+
+### NumberRangeFilter
+
+For price or numeric ranges:
+
+```vue
+<NumberRangeFilter :filter="filter" />
+```
+
+### FiltersSearch
+
+Add search functionality to filter lists:
+
+```vue
+<FiltersSearch :filters="facet.filters">
+  <!-- Filter components here -->
+</FiltersSearch>
+```
+
+## Use Cases
+
+<CardGroup cols={2}>
+  <Card title="E-commerce Filtering" icon="filter">
+    Filter products by brand, price, color, size, and more
+  </Card>
+  <Card title="Content Categorization" icon="folders">
+    Filter articles by topic, author, date, and tags
+  </Card>
+  <Card title="Job Search" icon="briefcase">
+    Filter jobs by location, salary, experience, and type
+  </Card>
+  <Card title="Real Estate" icon="house">
+    Filter properties by price, bedrooms, location, and features
+  </Card>
+</CardGroup>
+
+<Note>
+  Facets automatically update based on the current search results, showing only relevant filter options.
+</Note>
+
+## Related Components
+
+<CardGroup cols={2}>
+  <Card title="ResultsList" icon="list" href="/components/search-results">
+    Display filtered search results
+  </Card>
+  <Card title="SearchInput" icon="keyboard" href="/components/search-box">
+    Accept search queries from users
+  </Card>
+</CardGroup>

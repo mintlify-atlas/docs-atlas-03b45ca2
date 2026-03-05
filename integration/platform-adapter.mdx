@@ -1,0 +1,441 @@
+---
+title: Platform Adapter
+description: Use the pre-built adapter for Empathy Platform Search API
+---
+
+# Platform Adapter
+
+The `@empathyco/x-adapter-platform` package provides a ready-to-use adapter for the [Empathy Platform Search API](https://docs.empathy.co/develop-empathy-platform/api-reference/search-api.html).
+
+## Installation
+
+<CodeGroup>
+```bash npm
+npm install @empathyco/x-adapter-platform
+```
+
+```bash pnpm
+pnpm add @empathyco/x-adapter-platform
+```
+
+```bash yarn
+yarn add @empathyco/x-adapter-platform
+```
+</CodeGroup>
+
+## Basic Usage
+
+```typescript
+import { platformAdapter } from '@empathyco/x-adapter-platform'
+
+// Search for products
+const { results } = await platformAdapter.search({
+  query: 'shoes',
+  extraParams: {
+    lang: 'en',
+    instance: 'your-instance',
+    env: 'staging',
+  },
+})
+
+console.log(results)
+```
+
+Source: `/home/daytona/workspace/source/packages/x-adapter-platform/README.md:82`
+
+## Configuration
+
+Empathy Platform API requires three parameters for most endpoints:
+
+- **`env`**: Environment (e.g., `staging`, `production`)
+- **`instance`**: Your instance identifier
+- **`lang`**: Language code (e.g., `en`, `es`, `fr`)
+
+These are passed via the `extraParams` field in each request.
+
+<Info>
+  If you're using [x-archetype](https://github.com/empathyco/x-archetype), these parameters are configured automatically through the snippet configuration.
+</Info>
+
+## Available Endpoints
+
+The platform adapter includes the following endpoint adapters:
+
+```typescript
+export const platformAdapter = {
+  search,
+  popularSearches,
+  recommendations,
+  nextQueries,
+  querySuggestions,
+  relatedPrompts,
+  relatedTags,
+  identifierResults,
+  tagging,
+  semanticQueries,
+  experienceControls,
+  aiSuggestions,
+  aiSummarize,
+  aiSuggestionsSearch,
+  aiQuestions,
+  aiTasks,
+  facets,
+}
+```
+
+Source: `/home/daytona/workspace/source/packages/x-adapter-platform/src/platform.adapter.ts:1`
+
+### Search
+
+Search for products based on a query.
+
+<ParamField path="endpoint" type="string">
+  `/search/v1/query/{instance}/search`
+</ParamField>
+
+<CodeGroup>
+```typescript Usage
+const { results, totalResults, facets } = await platformAdapter.search({
+  query: 'running shoes',
+  rows: 24,
+  start: 0,
+  extraParams: {
+    lang: 'en',
+    instance: 'your-instance',
+    env: 'staging',
+  },
+})
+```
+
+```typescript Request Type
+interface SearchRequest {
+  query: string
+  rows?: number
+  start?: number
+  filters?: Filter[]
+  sort?: string
+  extraParams: {
+    lang: string
+    instance: string
+    env: string
+  }
+}
+```
+
+```typescript Response Type
+interface SearchResponse {
+  results: Result[]
+  totalResults: number
+  facets?: Facet[]
+  banners?: Banner[]
+  promoted?: Result[]
+  redirections?: Redirection[]
+  partialResults?: boolean
+  spellcheck?: string
+}
+```
+</CodeGroup>
+
+Source: `/home/daytona/workspace/source/packages/x-adapter-platform/README.md:70`
+
+### Query Suggestions
+
+Get query suggestions as the user types.
+
+<ParamField path="endpoint" type="string">
+  `/search/v1/query/{instance}/empathize`
+</ParamField>
+
+```typescript
+const { suggestions } = await platformAdapter.querySuggestions({
+  query: 'sho',
+  extraParams: {
+    lang: 'en',
+    instance: 'your-instance',
+    env: 'staging',
+  },
+})
+
+// suggestions: ['shoes', 'shorts', 'shoulder bags', ...]
+```
+
+Source: `/home/daytona/workspace/source/packages/x-adapter-platform/README.md:174`
+
+### Popular Searches
+
+Get the most popular searches.
+
+<ParamField path="endpoint" type="string">
+  `/search/v1/query/{instance}/empathize`
+</ParamField>
+
+```typescript
+const { suggestions } = await platformAdapter.popularSearches({
+  extraParams: {
+    lang: 'en',
+    instance: 'your-instance',
+    env: 'staging',
+  },
+})
+```
+
+Source: `/home/daytona/workspace/source/packages/x-adapter-platform/README.md:97`
+
+### Recommendations
+
+Get top clicked products (recommendations).
+
+<ParamField path="endpoint" type="string">
+  `/search/v1/query/{instance}/topclicked`
+</ParamField>
+
+```typescript
+const { results } = await platformAdapter.recommendations({
+  extraParams: {
+    lang: 'en',
+    instance: 'your-instance',
+    env: 'staging',
+  },
+})
+```
+
+Source: `/home/daytona/workspace/source/packages/x-adapter-platform/README.md:121`
+
+### Next Queries
+
+Get suggested next queries after a search.
+
+<ParamField path="endpoint" type="string">
+  `/nextqueries/{instance}`
+</ParamField>
+
+```typescript
+const { nextQueries } = await platformAdapter.nextQueries({
+  query: 'running shoes',
+  extraParams: {
+    lang: 'en',
+    instance: 'your-instance',
+    env: 'staging',
+  },
+})
+
+// nextQueries: ['women running shoes', 'nike running shoes', ...]
+```
+
+Source: `/home/daytona/workspace/source/packages/x-adapter-platform/README.md:146`
+
+### Related Tags
+
+Get related tags to refine a search.
+
+<ParamField path="endpoint" type="string">
+  `/relatedtags/{instance}`
+</ParamField>
+
+```typescript
+const { relatedTags } = await platformAdapter.relatedTags({
+  query: 'shoes',
+  extraParams: {
+    lang: 'en',
+    instance: 'your-instance',
+    env: 'staging',
+  },
+})
+
+// relatedTags: [{ tag: 'women', count: 150 }, { tag: 'nike', count: 98 }, ...]
+```
+
+Source: `/home/daytona/workspace/source/packages/x-adapter-platform/README.md:201`
+
+### Identifier Results
+
+Search products by identifier (SKU).
+
+<ParamField path="endpoint" type="string">
+  `/search/v1/query/{instance}/skusearch`
+</ParamField>
+
+```typescript
+const { results } = await platformAdapter.identifierResults({
+  query: 'SKU-12345',
+  extraParams: {
+    lang: 'en',
+    instance: 'your-instance',
+    env: 'staging',
+  },
+})
+```
+
+Source: `/home/daytona/workspace/source/packages/x-adapter-platform/README.md:227`
+
+### Tagging
+
+Send tracking events.
+
+<ParamField path="endpoint" type="string">
+  Custom URL provided in request
+</ParamField>
+
+```typescript
+await platformAdapter.tagging({
+  url: 'https://api.staging.empathy.co/tagging/v1/track/your-instance/query',
+  params: {
+    filtered: 'false',
+    lang: 'en',
+    origin: 'customer:no_query',
+    page: '1',
+    q: 'shoes',
+    scope: 'desktop',
+    spellcheck: 'false',
+    totalHits: 150,
+  },
+})
+```
+
+Source: `/home/daytona/workspace/source/packages/x-adapter-platform/README.md:253`
+
+## Endpoint Adapter Structure
+
+Here's how a platform endpoint adapter is built:
+
+```typescript
+import { endpointAdapterFactory, interpolate } from '@empathyco/x-adapter'
+import { searchRequestMapper } from '../mappers/requests/search-request.mapper'
+import { searchResponseMapper } from '../mappers/responses/search-response.mapper'
+import { getDefaultHeaders, getSearchServiceUrl } from './utils'
+
+export const searchEndpointAdapter = endpointAdapterFactory<
+  SearchRequest,
+  SearchResponse
+>({
+  endpoint: from =>
+    interpolate(
+      `${getSearchServiceUrl(from)}/query/{extraParams.instance}/search`,
+      from
+    ),
+  requestMapper: searchRequestMapper,
+  responseMapper: searchResponseMapper,
+  defaultRequestOptions: {
+    id: 'search',
+    properties: {
+      headers: getDefaultHeaders(),
+    },
+    parameters: {
+      internal: true,
+    },
+  },
+})
+```
+
+Source: `/home/daytona/workspace/source/packages/x-adapter-platform/src/endpoint-adapters/search.endpoint-adapter.ts:1`
+
+## Customizing the Adapter
+
+You can customize the platform adapter using mutable schemas:
+
+### Override Response Fields
+
+Add or modify fields in the response:
+
+```typescript
+import { resultSchema } from '@empathyco/x-adapter-platform'
+import type { Result } from '@empathyco/x-types'
+
+// Extend Result type
+declare module '@empathyco/x-types' {
+  export interface Result {
+    customField: string
+  }
+}
+
+// Add mapping for the new field
+resultSchema.$override({
+  customField: 'custom_field',
+})
+```
+
+Source: `/home/daytona/workspace/source/packages/x-adapter-platform/README.md:297`
+
+### Extend Endpoint Adapters
+
+Modify an endpoint adapter:
+
+```typescript
+import { platformAdapter } from '@empathyco/x-adapter-platform'
+
+const customSearch = platformAdapter.search.extends({
+  defaultRequestOptions: {
+    parameters: {
+      rows: 24,
+      customParam: 'value',
+    },
+  },
+})
+
+// Use the customized adapter
+const results = await customSearch({
+  query: 'shoes',
+  extraParams: { lang: 'en', instance: 'demo', env: 'staging' },
+})
+```
+
+## TypeScript Support
+
+The platform adapter includes full TypeScript types from `@empathyco/x-types`:
+
+```typescript
+import type {
+  SearchRequest,
+  SearchResponse,
+  Result,
+  Facet,
+  Filter,
+  QuerySuggestionsRequest,
+  Suggestion,
+} from '@empathyco/x-types'
+```
+
+All requests and responses are fully typed for autocomplete and type safety.
+
+## Testing
+
+The package includes comprehensive tests:
+
+```bash
+npm run test
+```
+
+Tests are located in `__tests__` folders throughout the package.
+
+## Package Information
+
+<CardGroup cols={2}>
+  <Card title="Package" icon="box">
+    `@empathyco/x-adapter-platform`
+  </Card>
+  
+  <Card title="Dependencies" icon="puzzle-piece">
+    - `@empathyco/x-adapter`
+    - `@empathyco/x-types`
+  </Card>
+  
+  <Card title="API Documentation" icon="book">
+    [Empathy Platform API Reference](https://docs.empathy.co/develop-empathy-platform/api-reference/search-api.html)
+  </Card>
+  
+  <Card title="Repository" icon="github">
+    [empathyco/x](https://github.com/empathyco/x/tree/main/packages/x-adapter-platform)
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Adapter System" href="/integration/adapters" icon="plug">
+    Learn about the adapter architecture
+  </Card>
+  
+  <Card title="Custom API" href="/integration/custom-api" icon="code">
+    Build adapters for other APIs
+  </Card>
+</CardGroup>

@@ -1,0 +1,246 @@
+---
+title: "Related Tags"
+description: "Display tag-based refinements to help users narrow down search results"
+---
+
+## Overview
+
+The `RelatedTags` component renders a set of clickable tags that help users refine their search results. After searching for a broad term like "lego", users can select related tags like "city", "friends", or "harry potter" to narrow results to "lego city", "lego friends", or "lego harry potter".
+
+<Warning>
+  **Backend microservice required**: To use this component, the QuerySignals microservice must be implemented in your search API.
+</Warning>
+
+## When to Use
+
+Use the RelatedTags component to:
+
+- Help users refine broad search queries
+- Display category or attribute-based filters as tags
+- Provide quick access to popular search refinements
+- Improve search precision without complex facet interfaces
+
+## Installation
+
+Import the component from the related-tags module:
+
+```javascript
+import { RelatedTags } from '@empathyco/x-components/related-tags'
+```
+
+## Basic Usage
+
+The component automatically displays related tags after a search is performed:
+
+```vue
+<template>
+  <div>
+    <SearchInput />
+    <RelatedTags />
+  </div>
+</template>
+
+<script setup>
+import { SearchInput } from '@empathyco/x-components/search-box'
+import { RelatedTags } from '@empathyco/x-components/related-tags'
+</script>
+```
+
+## Props
+
+<ParamField path="animation" type="Vue Component" default="'ul'">
+  Animation component that will be used to animate the tags. Pass a Vue animation component to add entrance effects.
+</ParamField>
+
+<ParamField path="maxItemsToRender" type="number" default="undefined">
+  Number of related tags to be rendered. If not specified, all available tags from the state will be displayed.
+</ParamField>
+
+<ParamField path="highlightCurated" type="boolean" default="false">
+  Flag to indicate if curated tags should be displayed differently from algorithmic ones. When true, curated tags can have distinct styling.
+</ParamField>
+
+<ParamField path="itemClass" type="string" default="undefined">
+  CSS class(es) to be applied to each tag element. Useful for consistent styling across tags.
+</ParamField>
+
+## Slots
+
+### related-tag Slot
+
+Customize the entire related tag component including wrapper and behavior.
+
+**Slot Props:**
+- `relatedTag` (RelatedTag) - The related tag data
+- `highlightCurated` (boolean) - Whether curated tags should be highlighted
+
+```vue
+<RelatedTags #related-tag="{ relatedTag }">
+  <RelatedTag :relatedTag="relatedTag" />
+</RelatedTags>
+```
+
+### related-tag-content Slot
+
+Customize only the content inside each tag.
+
+**Slot Props:**
+- `relatedTag` (RelatedTag) - The related tag data
+- `isSelected` (boolean) - Whether this tag is currently selected
+- `shouldHighlightCurated` (boolean) - Whether this specific tag should be highlighted
+
+```vue
+<RelatedTags #related-tag-content="{ relatedTag, isSelected }">
+  <span :class="{ 'active': isSelected }">{{ relatedTag.tag }}</span>
+</RelatedTags>
+```
+
+## Events
+
+The component emits events through the event bus:
+
+- **UserSelectedARelatedTag**: Emitted when a user clicks on a related tag
+- **UserDeselectedARelatedTag**: Emitted when a user clicks on an already selected tag
+
+## Examples
+
+### Basic Example
+
+Display related tags with default styling:
+
+```vue
+<template>
+  <div>
+    <SearchInput />
+    <RelatedTags />
+  </div>
+</template>
+
+<script setup>
+import { SearchInput } from '@empathyco/x-components/search-box'
+import { RelatedTags } from '@empathyco/x-components/related-tags'
+</script>
+```
+
+### With Animation and Limit
+
+Add animations and limit the number of displayed tags:
+
+```vue
+<template>
+  <div>
+    <SearchInput />
+    <RelatedTags :animation="StaggeredFadeAndSlide" :maxItemsToRender="3" />
+  </div>
+</template>
+
+<script setup>
+import { SearchInput } from '@empathyco/x-components/search-box'
+import { RelatedTags } from '@empathyco/x-components/related-tags'
+import { StaggeredFadeAndSlide } from '@empathyco/x-components'
+</script>
+```
+
+### Custom Tag Content
+
+Customize the appearance of tag content:
+
+```vue
+<template>
+  <div>
+    <SearchInput />
+    <RelatedTags #related-tag-content="{ relatedTag }">
+      <span class="tag-text">{{ relatedTag.tag }}</span>
+    </RelatedTags>
+  </div>
+</template>
+
+<script setup>
+import { SearchInput } from '@empathyco/x-components/search-box'
+import { RelatedTags } from '@empathyco/x-components/related-tags'
+</script>
+```
+
+### With Custom Styling Classes
+
+Apply custom CSS classes to tags:
+
+```vue
+<template>
+  <div>
+    <SearchInput />
+    <RelatedTags
+      #related-tag-content="{ relatedTag }"
+      itemClass="x-tag-outlined x-tag-auxiliary"
+    >
+      <span>{{ relatedTag.tag }}</span>
+    </RelatedTags>
+  </div>
+</template>
+
+<script setup>
+import { SearchInput } from '@empathyco/x-components/search-box'
+import { RelatedTags } from '@empathyco/x-components/related-tags'
+</script>
+```
+
+### Integrated with Results
+
+Combine related tags with search results for a complete search experience:
+
+```vue
+<template>
+  <div>
+    <SearchInput />
+    <RelatedTags />
+    <ResultsList #result="{ item }">
+      <span class="result">{{ item.name }}</span>
+    </ResultsList>
+  </div>
+</template>
+
+<script setup>
+import { SearchInput } from '@empathyco/x-components/search-box'
+import { RelatedTags } from '@empathyco/x-components/related-tags'
+import { ResultsList } from '@empathyco/x-components/search'
+</script>
+```
+
+## Integration Tips
+
+<Tip>
+  Related tags work best when displayed prominently near search results. They provide an intuitive way for users to refine without overwhelming them with complex filters.
+</Tip>
+
+<Note>
+  Tags can be selected and deselected. When a tag is selected, the search query is automatically refined. Multiple tags can be active simultaneously.
+</Note>
+
+## Curated vs Algorithmic Tags
+
+Related tags can be:
+
+- **Algorithmic**: Generated automatically based on search results and user behavior
+- **Curated**: Manually configured by merchandisers for specific queries
+
+Use the `highlightCurated` prop to visually distinguish curated tags, helping users identify editorially recommended refinements.
+
+## Styling
+
+The component uses these CSS classes:
+
+- `.x-related-tags` - Main container (flex layout)
+- `.x-related-tags__item` - Individual tag wrapper
+- `.x-related-tag` - Tag component itself
+
+Default styling displays tags in a horizontal row with `display: flex` and `flex-flow: row nowrap`.
+
+## Accessibility
+
+Related tags are interactive buttons that can be selected with keyboard navigation. Ensure your custom implementations maintain keyboard accessibility.
+
+## Related Components
+
+- [Next Queries](/components/next-queries) - Show related query suggestions
+- [Facets](/components/facets) - Advanced filtering interface
+- [Popular Searches](/components/popular-searches) - Display trending searches

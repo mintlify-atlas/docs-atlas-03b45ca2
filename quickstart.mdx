@@ -1,80 +1,436 @@
 ---
 title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+description: "Build your first search experience with Interface X in under 10 minutes"
 ---
 
-## Get started in three steps
+## Overview
 
-Get your documentation site running locally and make your first customization.
-
-### Step 1: Set up your local environment
-
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
-
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
-
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 3: Go live
-
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
-
-## Next steps
-
-Now that you have your docs running, explore these key features:
-
-<CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
-</CardGroup>
+This guide will walk you through creating a basic search interface using Interface X components. By the end, you'll have a working search box with query suggestions and results display.
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+  Before starting, make sure you've completed the [Installation](/installation) guide.
+</Note>
+
+## What You'll Build
+
+In this quickstart, you'll create a search interface with:
+
+- A search input field with auto-suggestions
+- Query suggestions as users type
+- A results list that displays search results
+- Clear search functionality
+
+## Step-by-Step Guide
+
+<Steps>
+  <Step title="Set up the X Plugin">
+    First, install the X Plugin in your Vue application. Create or update your `main.ts` file:
+
+    ```typescript main.ts
+    import { createApp } from 'vue';
+    import { XInstaller } from '@empathyco/x-components';
+    import { platformAdapter } from '@empathyco/x-adapter-platform';
+    import App from './App.vue';
+
+    // Configure the X Installer
+    const installer = new XInstaller({
+      adapter: platformAdapter,
+      domElement: '#app',
+      rootComponent: App,
+    });
+
+    // Initialize with your search configuration
+    await installer.init({
+      instance: 'empathy',
+      lang: 'en',
+      env: 'staging',
+      scope: 'your-catalog-scope',
+    });
+    ```
+
+    This sets up the X Plugin with the Platform Adapter for connecting to your search API.
+  </Step>
+
+  <Step title="Create the Search Interface Component">
+    Create a new Vue component for your search interface. This component will include the search box and results:
+
+    ```vue SearchInterface.vue
+    <template>
+      <div class="search-interface">
+        <!-- Search Input Container -->
+        <div class="search-box">
+          <div class="search-input-group">
+            <SearchInput
+              :instant="true"
+              :instant-debounce-in-ms="500"
+              :max-length="64"
+              :autofocus="true"
+              aria-label="Search for products"
+            />
+            <ClearSearchInput aria-label="Clear search">
+              Clear
+            </ClearSearchInput>
+            <SearchButton aria-label="Search">
+              Search
+            </SearchButton>
+          </div>
+
+          <!-- Query Suggestions -->
+          <QuerySuggestions
+            :max-items-to-render="5"
+            class="suggestions-list"
+          >
+            <template #suggestion-content="{ suggestion }">
+              <span class="suggestion-text">{{ suggestion.query }}</span>
+            </template>
+          </QuerySuggestions>
+        </div>
+
+        <!-- Search Results -->
+        <div class="results-section">
+          <ResultsList>
+            <template #result="{ item }">
+              <article class="result-card">
+                <img
+                  v-if="item.images?.[0]"
+                  :src="item.images[0]"
+                  :alt="item.name"
+                  class="result-image"
+                />
+                <div class="result-info">
+                  <h3 class="result-title">{{ item.name }}</h3>
+                  <p v-if="item.price" class="result-price">
+                    {{ item.price.value }} {{ item.price.currency }}
+                  </p>
+                </div>
+              </article>
+            </template>
+          </ResultsList>
+        </div>
+      </div>
+    </template>
+
+    <script setup lang="ts">
+    import {
+      SearchInput,
+      ClearSearchInput,
+      SearchButton,
+      QuerySuggestions,
+      ResultsList,
+    } from '@empathyco/x-components';
+    </script>
+    ```
+  </Step>
+
+  <Step title="Import Required Components">
+    The components used in this example come from different X Modules:
+
+    ```typescript
+    // From search-box module
+    import { SearchInput } from '@empathyco/x-components';
+    import { ClearSearchInput } from '@empathyco/x-components';
+    import { SearchButton } from '@empathyco/x-components';
+
+    // From query-suggestions module
+    import { QuerySuggestions } from '@empathyco/x-components';
+
+    // From search module
+    import { ResultsList } from '@empathyco/x-components';
+    ```
+
+    <Info>
+      All components are exported from the main `@empathyco/x-components` package for easy importing.
+    </Info>
+  </Step>
+
+  <Step title="Add Basic Styling">
+    Add some basic CSS to make your search interface look presentable:
+
+    ```css styles.css
+    .search-interface {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .search-box {
+      margin-bottom: 2rem;
+    }
+
+    .search-input-group {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .search-input-group input {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+
+    .search-input-group button {
+      padding: 0.75rem 1.5rem;
+      background: #0066cc;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .suggestions-list {
+      list-style: none;
+      padding: 0;
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      margin-top: 0.5rem;
+    }
+
+    .suggestion-text {
+      display: block;
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .suggestion-text:hover {
+      background: #f5f5f5;
+    }
+
+    .results-section {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .result-card {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 1rem;
+      transition: box-shadow 0.2s;
+    }
+
+    .result-card:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .result-image {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+    }
+
+    .result-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .result-price {
+      color: #0066cc;
+      font-weight: 600;
+    }
+    ```
+  </Step>
+
+  <Step title="Test Your Search Interface">
+    Start your development server and test the search functionality:
+
+    ```bash
+    npm run dev
+    ```
+
+    Try the following interactions:
+    
+    1. **Type in the search box** - You should see query suggestions appear
+    2. **Click a suggestion** - The search should execute automatically
+    3. **View results** - Product results should display in a grid
+    4. **Clear the search** - Click the Clear button to reset
+  </Step>
+</Steps>
+
+## Understanding the Components
+
+### SearchInput
+
+The `SearchInput` component provides the main search field with built-in features:
+
+- **`instant`**: When `true`, automatically triggers search as you type
+- **`instant-debounce-in-ms`**: Delay in milliseconds before triggering instant search (prevents excessive API calls)
+- **`max-length`**: Maximum character limit for the search query
+- **`autofocus`**: Automatically focus the input when the component mounts
+
+```vue
+<SearchInput
+  :instant="true"
+  :instant-debounce-in-ms="500"
+  :max-length="64"
+  :autofocus="true"
+/>
+```
+
+### QuerySuggestions
+
+Displays query suggestions based on what the user types:
+
+```vue
+<QuerySuggestions :max-items-to-render="5">
+  <template #suggestion-content="{ suggestion }">
+    {{ suggestion.query }}
+  </template>
+</QuerySuggestions>
+```
+
+### ResultsList
+
+Renders search results with customizable item templates:
+
+```vue
+<ResultsList>
+  <template #result="{ item }">
+    <!-- Your custom result card -->
+  </template>
+</ResultsList>
+```
+
+## Component State Management
+
+Interface X uses Vuex for state management. Each component automatically connects to the appropriate store module:
+
+- `SearchInput` → `searchBox` module
+- `QuerySuggestions` → `querySuggestions` module  
+- `ResultsList` → `search` module
+
+You can access state using the `useState` composable:
+
+```typescript
+import { useState } from '@empathyco/x-components';
+
+const { query, results, totalResults } = useState('search');
+```
+
+## Event System
+
+Interface X components communicate through an event bus. Common events include:
+
+- `UserAcceptedAQuery` - User submitted a search query
+- `UserIsTypingAQuery` - User is typing in the search box
+- `UserClickedAResult` - User clicked on a search result
+- `UserClearedQuery` - User cleared the search
+
+You can listen to events using the `use$x` composable:
+
+```typescript
+import { use$x } from '@empathyco/x-components';
+
+const $x = use$x();
+
+$x.on('UserAcceptedAQuery').subscribe(({ query }) => {
+  console.log('User searched for:', query);
+});
+```
+
+## Next Steps
+
+Now that you have a basic search interface working, explore these features:
+
+<CardGroup cols={2}>
+  <Card title="Add Facets & Filters" icon="filter" href="/components/facets">
+    Let users refine search results with filters
+  </Card>
+
+  <Card title="Popular Searches" icon="fire" href="/components/popular-searches">
+    Display trending searches to inspire users
+  </Card>
+
+  <Card title="Recommendations" icon="sparkles" href="/components/recommendations">
+    Show personalized product recommendations
+  </Card>
+
+  <Card title="History Queries" icon="clock-rotate-left" href="/components/history-queries">
+    Display user's recent search history
+  </Card>
+</CardGroup>
+
+## Advanced Configuration
+
+### Configure Multiple Modules
+
+You can configure specific X Modules during installation:
+
+```typescript
+const installer = new XInstaller({
+  adapter: platformAdapter,
+  xModules: {
+    facets: {
+      config: {
+        filtersStrategyForRequest: 'leaves-only',
+      },
+    },
+    search: {
+      config: {
+        pageSize: 24,
+      },
+    },
+  },
+});
+```
+
+### Custom Adapter Configuration
+
+If you're using a custom search API, create your own adapter:
+
+```typescript
+import { endpointAdapterFactory } from '@empathyco/x-adapter';
+
+const customAdapter = {
+  search: endpointAdapterFactory({
+    endpoint: 'https://your-api.com/search',
+    requestMapper: (request) => ({
+      q: request.query,
+      rows: request.rows,
+    }),
+    responseMapper: (response) => ({
+      results: response.products,
+      totalResults: response.total,
+    }),
+  }),
+};
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="No suggestions appearing" icon="comment-question">
+    Ensure:
+    1. Your search API supports query suggestions
+    2. The adapter is correctly configured
+    3. You're typing at least 2-3 characters
+    4. Check browser console for API errors
+  </Accordion>
+
+  <Accordion title="Results not displaying" icon="magnifying-glass-minus">
+    Common issues:
+    1. Verify your `scope` and `instance` configuration
+    2. Check network tab for API responses
+    3. Ensure results data matches expected format
+    4. Try a known working query first
+  </Accordion>
+
+  <Accordion title="Components not styled" icon="paintbrush">
+    Interface X components come with minimal styling. Options:
+    1. Add your own CSS (as shown above)
+    2. Install `@empathyco/x-tailwindcss` for the design system
+    3. Use CSS frameworks like Tailwind or Bootstrap
+  </Accordion>
+</AccordionGroup>
+
+<Note>
+  For more examples, check out the [X Archetype](https://github.com/empathyco/x-archetype) - a complete reference implementation showing all Interface X capabilities.
 </Note>

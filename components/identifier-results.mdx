@@ -1,0 +1,534 @@
+---
+title: Identifier Results
+description: Display and highlight product results matching specific identifiers like SKUs, model numbers, or part codes
+---
+
+The Identifier Results module detects and displays products that match specific identifier patterns (such as SKUs, model numbers, part codes, or serial numbers) in the user's search query. It provides instant results when users search using product identifiers instead of natural language.
+
+## Overview
+
+Identifier Results enhances the search experience for users who know specific product codes or identifiers. When a user types a pattern matching your configured identifier format (e.g., "ABC-123-XYZ"), this module fetches and displays matching products immediately, often before they finish typing.
+
+### Key Features
+
+- **Pattern Detection**: Configurable regex to detect identifier formats
+- **Auto-Highlighting**: Automatically highlights matching identifier parts
+- **Separator Flexibility**: Supports various separator characters between identifier segments
+- **Instant Results**: Shows results as soon as pattern is detected
+- **Debounced Requests**: Optimizes API calls while typing
+- **Customizable Display**: Full control over result presentation
+
+## Components
+
+### IdentifierResults
+
+The main container component that renders a list of identifier-matched results.
+
+#### Props
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `animation` | `Vue Component` | `"ul"` | Animation component for list transitions |
+| `maxItemsToRender` | `number` | `undefined` | Maximum number of results to display |
+
+#### Slots
+
+- **`default`** (Required): Template for each identifier result item
+  - Bindings: `identifierResult` (Result object)
+
+#### Events
+
+The component automatically provides the `UserClickedAIdentifierResult` event to child result components.
+
+#### Usage
+
+```vue
+<template>
+  <IdentifierResults :maxItemsToRender="5">
+    <template #default="{ identifierResult }">
+      <BaseResultLink :result="identifierResult">
+        <IdentifierResult :result="identifierResult" />
+      </BaseResultLink>
+    </template>
+  </IdentifierResults>
+</template>
+
+<script setup>
+import { IdentifierResults, IdentifierResult } from '@empathyco/x-components/identifier-results'
+import { BaseResultLink } from '@empathyco/x-components'
+</script>
+```
+
+#### With Animation
+
+```vue
+<template>
+  <IdentifierResults :animation="FadeAndSlide">
+    <template #default="{ identifierResult }">
+      <IdentifierResult :result="identifierResult" />
+    </template>
+  </IdentifierResults>
+</template>
+
+<script setup>
+import { IdentifierResults, IdentifierResult } from '@empathyco/x-components/identifier-results'
+import { FadeAndSlide } from '@empathyco/x-components'
+</script>
+```
+
+#### Custom Layout
+
+```vue
+<template>
+  <IdentifierResults :maxItemsToRender="3">
+    <template #default="{ identifierResult }">
+      <article class="identifier-card">
+        <img :src="identifierResult.images[0]" :alt="identifierResult.name" />
+        <div class="identifier-info">
+          <h3>{{ identifierResult.name }}</h3>
+          <IdentifierResult :result="identifierResult" />
+          <span class="price">{{ identifierResult.price }}</span>
+        </div>
+      </article>
+    </template>
+  </IdentifierResults>
+</template>
+
+<script setup>
+import { IdentifierResults, IdentifierResult } from '@empathyco/x-components/identifier-results'
+</script>
+
+<style scoped>
+.identifier-card {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+}
+
+.identifier-card img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.identifier-info {
+  flex: 1;
+}
+
+.price {
+  font-weight: 600;
+  color: #2e7d32;
+}
+</style>
+```
+
+### IdentifierResult
+
+Displays an individual identifier value with automatic highlighting of the matching portion.
+
+#### Props
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `result` | `Result` | Yes | The result object containing identifier data |
+
+#### Features
+
+- Automatically extracts `identifier.value` from the result
+- Highlights the matching portion based on the search query
+- Applies the `x-identifier-result__matching-part` class to matched text
+- Renders nothing if no query or identifier value exists
+
+#### Usage
+
+```vue
+<template>
+  <IdentifierResult :result="result" />
+</template>
+
+<script setup>
+import { IdentifierResult } from '@empathyco/x-components/identifier-results'
+import { ref } from 'vue'
+
+const result = ref({
+  id: '12345',
+  name: 'Product Name',
+  identifier: {
+    value: 'ABC-123-XYZ'
+  },
+  // ...other result properties
+})
+</script>
+```
+
+#### Custom Styling
+
+```vue
+<template>
+  <IdentifierResult :result="result" class="custom-identifier" />
+</template>
+
+<style>
+.custom-identifier {
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  color: #333;
+}
+
+.custom-identifier .x-identifier-result__matching-part {
+  font-weight: bold;
+  color: #1976d2;
+  background-color: #e3f2fd;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+</style>
+```
+
+## Configuration
+
+Configure the Identifier Results module to match your product identifier format:
+
+```typescript
+import { InstallXOptions } from '@empathyco/x-components'
+
+const installXOptions: InstallXOptions = {
+  xModules: {
+    identifierResults: {
+      config: {
+        debounceInMs: 300,
+        maxItemsToRequest: 10,
+        identifierDetectionRegexp: '^[A-Z]{3}-[0-9]{3}-[A-Z]{3}$',
+        separatorChars: '-_. '
+      }
+    }
+  }
+}
+```
+
+### Configuration Options
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `debounceInMs` | `number` | Debounce time (ms) for query changes while typing |
+| `maxItemsToRequest` | `number` | Maximum number of identifier results to fetch from API |
+| `identifierDetectionRegexp` | `string` | Regex pattern to detect identifier format in query |
+| `separatorChars` | `string` | Characters that can separate identifier segments |
+
+### Regex Pattern Examples
+
+```typescript
+// SKU format: ABC-123
+identifierDetectionRegexp: '^[A-Z]{3}-[0-9]{3}$'
+
+// Model number: XPS-13-9310
+identifierDetectionRegexp: '^[A-Z]+-[0-9]+-[0-9]{4}$'
+
+// Part code with optional separators: ABC123 or ABC-123 or ABC_123
+identifierDetectionRegexp: '^[A-Z]{3}[-_]?[0-9]{3}$'
+
+// Serial number: SN1234567890
+identifierDetectionRegexp: '^SN[0-9]{10}$'
+
+// Flexible alphanumeric: Any 6-12 alphanumeric characters
+identifierDetectionRegexp: '^[A-Z0-9]{6,12}$'
+
+// Multiple segments: ABC-DEF-123-456
+identifierDetectionRegexp: '^([A-Z]{3}-){2}([0-9]{3}-){1}[0-9]{3}$'
+```
+
+## Events
+
+The Identifier Results module emits the following events:
+
+### State Change Events
+
+- **`IdentifierResultsChanged`**: Identifier results updated
+  - Payload: `Result[]` - Array of identifier results
+
+- **`IdentifierResultsRequestUpdated`**: Request parameters changed
+  - Payload: `IdentifierResultsRequest | null` - Request object or null if invalid
+
+### User Interaction Events
+
+- **`UserClickedAIdentifierResult`**: User clicked an identifier result
+  - Payload: `Result` - The clicked result object
+
+## Integration Patterns
+
+### In Empathize Layer
+
+Show identifier results alongside other suggestions:
+
+```vue
+<template>
+  <SearchInput />
+  <Empathize>
+    <BaseKeyboardNavigation>
+      <!-- Identifier results appear first when pattern detected -->
+      <section v-if="hasIdentifierResults" class="identifier-section">
+        <h3>Matching Products</h3>
+        <IdentifierResults :maxItemsToRender="3">
+          <template #default="{ identifierResult }">
+            <BaseResultLink :result="identifierResult">
+              <div class="result-card">
+                <img :src="identifierResult.images[0]" />
+                <div>
+                  <h4>{{ identifierResult.name }}</h4>
+                  <IdentifierResult :result="identifierResult" />
+                </div>
+              </div>
+            </BaseResultLink>
+          </template>
+        </IdentifierResults>
+      </section>
+      
+      <!-- Standard suggestions -->
+      <QuerySuggestions />
+      <PopularSearches />
+    </BaseKeyboardNavigation>
+  </Empathize>
+</template>
+
+<script setup>
+import { SearchInput } from '@empathyco/x-components/search-box'
+import { Empathize } from '@empathyco/x-components/empathize'
+import { BaseKeyboardNavigation } from '@empathyco/x-components'
+import { IdentifierResults, IdentifierResult } from '@empathyco/x-components/identifier-results'
+import { QuerySuggestions } from '@empathyco/x-components/query-suggestions'
+import { PopularSearches } from '@empathyco/x-components/popular-searches'
+import { BaseResultLink } from '@empathyco/x-components'
+import { useState } from '@empathyco/x-components'
+import { computed } from 'vue'
+
+const { identifierResults } = useState('identifierResults')
+const hasIdentifierResults = computed(() => identifierResults.value.length > 0)
+</script>
+```
+
+### Standalone Quick Search
+
+Create a dedicated identifier search interface:
+
+```vue
+<template>
+  <div class="quick-search">
+    <div class="search-header">
+      <label for="identifier-input">Enter Product Code</label>
+      <input 
+        id="identifier-input"
+        v-model="query"
+        type="text"
+        placeholder="e.g., ABC-123-XYZ"
+        class="identifier-input"
+      />
+    </div>
+    
+    <div v-if="isValidIdentifier" class="results">
+      <IdentifierResults>
+        <template #default="{ identifierResult }">
+          <BaseResultLink :result="identifierResult">
+            <article class="quick-result">
+              <img :src="identifierResult.images[0]" />
+              <div class="result-details">
+                <h3>{{ identifierResult.name }}</h3>
+                <IdentifierResult :result="identifierResult" />
+                <p class="description">{{ identifierResult.description }}</p>
+                <button class="add-to-cart">Add to Cart</button>
+              </div>
+            </article>
+          </BaseResultLink>
+        </template>
+      </IdentifierResults>
+    </div>
+    
+    <p v-else-if="query" class="format-hint">
+      Format: ABC-123-XYZ (3 letters - 3 numbers - 3 letters)
+    </p>
+  </div>
+</template>
+
+<script setup>
+import { IdentifierResults, IdentifierResult } from '@empathyco/x-components/identifier-results'
+import { BaseResultLink } from '@empathyco/x-components'
+import { ref, computed } from 'vue'
+
+const query = ref('')
+
+const isValidIdentifier = computed(() => {
+  return /^[A-Z]{3}-[0-9]{3}-[A-Z]{3}$/.test(query.value)
+})
+</script>
+```
+
+### With Product Comparison
+
+Allow users to compare multiple identifier results:
+
+```vue
+<template>
+  <div class="identifier-comparison">
+    <IdentifierResults>
+      <template #default="{ identifierResult }">
+        <div class="comparison-card">
+          <input 
+            type="checkbox"
+            :value="identifierResult.id"
+            v-model="selectedForComparison"
+          />
+          <BaseResultLink :result="identifierResult">
+            <img :src="identifierResult.images[0]" />
+            <h4>{{ identifierResult.name }}</h4>
+            <IdentifierResult :result="identifierResult" />
+            <span class="price">{{ identifierResult.price }}</span>
+          </BaseResultLink>
+        </div>
+      </template>
+    </IdentifierResults>
+    
+    <button 
+      v-if="selectedForComparison.length > 1"
+      @click="compareProducts"
+      class="compare-button"
+    >
+      Compare {{ selectedForComparison.length }} Products
+    </button>
+  </div>
+</template>
+
+<script setup>
+import { IdentifierResults, IdentifierResult } from '@empathyco/x-components/identifier-results'
+import { BaseResultLink } from '@empathyco/x-components'
+import { ref } from 'vue'
+
+const selectedForComparison = ref([])
+
+const compareProducts = () => {
+  // Navigate to comparison page with selected IDs
+  window.location.href = `/compare?ids=${selectedForComparison.value.join(',')}`
+}
+</script>
+```
+
+## Best Practices
+
+### Pattern Design
+
+Create identifier patterns that balance precision and flexibility:
+
+```typescript
+// ✅ Good: Specific but allows common variations
+identifierDetectionRegexp: '^[A-Z]{2,4}[-_]?[0-9]{3,6}$'
+separatorChars: '-_ '
+
+// ❌ Too restrictive: Won't match slight variations
+identifierDetectionRegexp: '^ABC-[0-9]{3}$'
+
+// ❌ Too loose: Will match unintended queries
+identifierDetectionRegexp: '^[A-Z0-9]+$'
+```
+
+### Performance Optimization
+
+Set appropriate debounce and result limits:
+
+```typescript
+identifierResults: {
+  config: {
+    debounceInMs: 300,      // Balance between responsiveness and API load
+    maxItemsToRequest: 10,  // Limit to essential results
+  }
+}
+```
+
+### User Feedback
+
+Provide clear feedback about identifier format:
+
+```vue
+<template>
+  <div class="identifier-search">
+    <input v-model="query" placeholder="Enter product code" />
+    <span v-if="query && !isValidFormat" class="format-error">
+      Invalid format. Expected: ABC-123-XYZ
+    </span>
+  </div>
+</template>
+```
+
+### Highlighting
+
+Style matched portions for clarity:
+
+```css
+.x-identifier-result__matching-part {
+  font-weight: 700;
+  color: #1976d2;
+  background-color: #e3f2fd;
+  padding: 2px 4px;
+  border-radius: 2px;
+  font-family: 'Monaco', 'Courier New', monospace;
+}
+```
+
+### Case Sensitivity
+
+Handle case variations in your pattern:
+
+```typescript
+// Case-insensitive matching
+identifierDetectionRegexp: '^[A-Za-z]{3}-[0-9]{3}$'
+
+// Or normalize query before matching
+const normalizedQuery = query.toUpperCase()
+```
+
+## Troubleshooting
+
+### Results Not Appearing
+
+1. Check regex pattern matches your query:
+
+```javascript
+const pattern = /^[A-Z]{3}-[0-9]{3}-[A-Z]{3}$/
+const query = 'ABC-123-XYZ'
+console.log(pattern.test(query)) // Should be true
+```
+
+2. Verify API returns identifier field:
+
+```javascript
+const result = {
+  id: '123',
+  name: 'Product',
+  identifier: { value: 'ABC-123-XYZ' } // Must have this structure
+}
+```
+
+### Highlighting Not Working
+
+Check separator configuration matches your identifiers:
+
+```typescript
+// If identifiers use dots: ABC.123.XYZ
+separatorChars: '.-_ '
+```
+
+### Too Many False Positives
+
+Refine your regex to be more specific:
+
+```typescript
+// Add anchors and specific character classes
+identifierDetectionRegexp: '^[A-Z]{3}-[0-9]{3}-[A-Z]{3}$'  // Exact format
+```
+
+## Related Components
+
+- [Empathize](/components/empathize) - Container for predictive results
+- [Query Suggestions](/components/query-suggestions) - Text-based suggestions
+- [Search Results](/components/search-results) - Main search results display
+- [Base Components](/components/base-components) - Foundational UI components

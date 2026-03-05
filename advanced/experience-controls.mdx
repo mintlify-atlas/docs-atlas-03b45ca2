@@ -1,0 +1,468 @@
+---
+title: Experience Controls
+description: Dynamically control search experience features based on backend configuration
+---
+
+## Overview
+
+The Experience Controls module allows you to dynamically control search interface features based on backend configuration. This enables:
+
+- Feature flagging and A/B testing
+- Dynamic UI configuration without code changes
+- Personalized search experiences per user segment
+- Runtime feature enablement/disablement
+- Event-driven interface modifications
+
+## When to Use
+
+Implement experience controls when you need to:
+
+- Enable/disable features dynamically without deploying code
+- Run A/B tests on search interface features
+- Personalize search UI based on user segments or behavior
+- Control feature rollout progressively
+- Manage different experiences for different regions or brands
+- Toggle features based on business rules or external conditions
+
+## Configuration and Setup
+
+### Basic Setup
+
+Add the `ExperienceControls` component to your application:
+
+```vue
+<template>
+  <ExperienceControls />
+</template>
+
+<script setup>
+import { ExperienceControls } from '@empathyco/x-components/experience-controls'
+</script>
+```
+
+### Configure Backend Request
+
+The module fetches configuration from your backend. Configure the request parameters:
+
+```vue
+<script setup>
+import { use$x } from '@empathyco/x-components'
+
+const $x = use$x()
+
+// Set extra params for the request
+$x.emit('ExtraParamsChanged', {
+  userId: 'user123',
+  segment: 'premium',
+  region: 'us-west'
+})
+</script>
+```
+
+### Backend Response Format
+
+Your backend should return an `ExperienceControlsResponse`:
+
+```json
+{
+  "controls": {
+    "showRecommendations": true,
+    "enableFacets": true,
+    "resultsPerPage": 24,
+    "sortOptions": ["relevance", "price", "rating"]
+  },
+  "events": {
+    "UserOpenX": {
+      "metadata": {
+        "experiment": "new-ui-test",
+        "variant": "B"
+      }
+    }
+  }
+}
+```
+
+## API Reference
+
+### Store State
+
+```typescript
+interface ExperienceControlsState {
+  /** Feature controls from backend */
+  controls: Dictionary<unknown>
+  
+  /** Events configuration to emit */
+  events: Partial<XEventsTypes>
+  
+  /** Extra params for the request */
+  params: Dictionary<unknown>
+  
+  /** Request status */
+  status: Status
+}
+```
+
+### Store Getters
+
+```typescript
+interface ExperienceControlsGetters {
+  /** The request object for fetching controls */
+  experienceControlsRequest: ExperienceControlsRequest | null
+}
+```
+
+### Store Actions
+
+```typescript
+interface ExperienceControlsActions {
+  /** Fetch experience controls from backend */
+  fetchExperienceControlsResponse: (
+    request: ExperienceControlsRequest | null
+  ) => ExperienceControlsResponse
+  
+  /** Fetch and save controls to state */
+  fetchAndSaveExperienceControlsResponse: (
+    request: ExperienceControlsRequest | null
+  ) => void
+  
+  /** Cancel ongoing fetch request */
+  cancelFetchAndSaveControls: () => void
+}
+```
+
+### Store Mutations
+
+```typescript
+interface ExperienceControlsMutations {
+  /** Set controls from backend response */
+  setControls: (controls: Dictionary<unknown>) => void
+  
+  /** Set events to be emitted */
+  setEvents: (events: Partial<XEventsTypes>) => void
+  
+  /** Set request extra params */
+  setParams: (params: Dictionary<unknown>) => void
+  
+  /** Set request status */
+  setStatus: (status: Status) => void
+}
+```
+
+### Events
+
+```typescript
+interface ExperienceControlsXEvents {
+  /** Events configuration changed */
+  ExperienceControlsEventsChanged: Partial<XEventsTypes>
+  
+  /** Request parameters updated */
+  ExperienceControlsRequestUpdated: ExperienceControlsRequest | null
+}
+```
+
+## Examples
+
+### Toggle Features Based on Controls
+
+Use controls to show/hide features:
+
+```vue
+<template>
+  <div>
+    <SearchBox />
+    
+    <!-- Show facets only if enabled -->
+    <Facets v-if="controls.enableFacets" />
+    
+    <!-- Show recommendations if enabled -->
+    <Recommendations v-if="controls.showRecommendations" />
+    
+    <!-- Use dynamic results per page -->
+    <ResultsList :itemsPerPage="controls.resultsPerPage || 12" />
+  </div>
+</template>
+
+<script setup>
+import { useState } from '@empathyco/x-components'
+import { ExperienceControls } from '@empathyco/x-components/experience-controls'
+import { SearchBox } from '@empathyco/x-components/search-box'
+import { Facets } from '@empathyco/x-components/facets'
+import { Recommendations } from '@empathyco/x-components/recommendations'
+import { ResultsList } from '@empathyco/x-components/search'
+
+const { controls } = useState('experienceControls')
+</script>
+```
+
+### A/B Testing
+
+Implement A/B tests using controls:
+
+```vue
+<template>
+  <div>
+    <!-- Variant A: Traditional layout -->
+    <div v-if="controls.layoutVariant === 'A'">
+      <SearchBox />
+      <Facets />
+      <ResultsList />
+    </div>
+    
+    <!-- Variant B: New layout -->
+    <div v-if="controls.layoutVariant === 'B'">
+      <SearchBox />
+      <div class="grid-layout">
+        <aside><Facets /></aside>
+        <main><ResultsList /></main>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { useState } from '@empathyco/x-components'
+
+const { controls } = useState('experienceControls')
+</script>
+```
+
+### User Segment Personalization
+
+Customize experience by user segment:
+
+```vue
+<script setup>
+import { use$x, useState } from '@empathyco/x-components'
+
+const $x = use$x()
+const { controls } = useState('experienceControls')
+
+// Set user segment
+const userSegment = 'premium' // Could come from auth/profile
+
+$x.emit('ExtraParamsChanged', {
+  segment: userSegment,
+  userId: getCurrentUserId()
+})
+
+// Backend returns different controls based on segment
+// Premium users might get:
+// - More results per page
+// - Advanced filters
+// - Personalized recommendations
+</script>
+```
+
+### Dynamic Sort Options
+
+Configure available sort options from backend:
+
+```vue
+<template>
+  <Sort>
+    <SortButton
+      v-for="sortOption in controls.sortOptions"
+      :key="sortOption"
+      :value="sortOption"
+    >
+      {{ sortOption }}
+    </SortButton>
+  </Sort>
+</template>
+
+<script setup>
+import { useState } from '@empathyco/x-components'
+import { Sort, SortButton } from '@empathyco/x-components/search'
+
+const { controls } = useState('experienceControls')
+</script>
+```
+
+### Event-Driven Configuration
+
+Emit custom events based on controls:
+
+```vue
+<script setup>
+import { use$x, useState } from '@empathyco/x-components'
+import { watch } from 'vue'
+
+const $x = use$x()
+const { events } = useState('experienceControls')
+
+// Watch for events configuration changes
+watch(events, (newEvents) => {
+  // Backend can specify events to emit
+  Object.entries(newEvents).forEach(([eventName, eventConfig]) => {
+    $x.emit(eventName, eventConfig)
+  })
+})
+</script>
+```
+
+### Regional Configuration
+
+Customize experience by region:
+
+```vue
+<script setup>
+import { use$x, useState } from '@empathyco/x-components'
+
+const $x = use$x()
+const { controls } = useState('experienceControls')
+
+// Detect user region
+const userRegion = detectUserRegion() // 'us', 'eu', 'asia', etc.
+
+$x.emit('ExtraParamsChanged', {
+  region: userRegion,
+  language: navigator.language
+})
+
+// Backend returns region-specific configuration:
+// - Different currency displays
+// - Region-specific filters
+// - Localized features
+</script>
+```
+
+### Progressive Feature Rollout
+
+Gradually enable features:
+
+```vue
+<template>
+  <div>
+    <SearchBox />
+    
+    <!-- New feature: only shown if rollout percentage includes user -->
+    <NewFeature v-if="isFeatureEnabled('aiSuggestions')" />
+    
+    <ResultsList />
+  </div>
+</template>
+
+<script setup>
+import { useState } from '@empathyco/x-components'
+import { computed } from 'vue'
+
+const { controls } = useState('experienceControls')
+
+function isFeatureEnabled(featureName: string) {
+  const feature = controls.value[featureName]
+  if (typeof feature === 'boolean') return feature
+  
+  // Backend can return rollout percentage
+  if (typeof feature === 'object' && feature.rolloutPercentage) {
+    const userId = getCurrentUserId()
+    const userHash = hashUserId(userId)
+    return userHash % 100 < feature.rolloutPercentage
+  }
+  
+  return false
+}
+</script>
+```
+
+## Advanced Usage
+
+### Request Caching
+
+The module automatically caches controls. Update the request to fetch new configuration:
+
+```vue
+<script setup>
+import { use$x } from '@empathyco/x-components'
+
+const $x = use$x()
+
+// Trigger new request when params change
+function updateExperience(newParams: Record<string, unknown>) {
+  $x.emit('ExtraParamsChanged', newParams)
+  // Request is automatically triggered via wiring
+}
+</script>
+```
+
+### Handling Loading States
+
+Show loading indicators while fetching controls:
+
+```vue
+<template>
+  <div>
+    <div v-if="status === 'loading'">
+      Loading experience...
+    </div>
+    
+    <div v-else-if="status === 'success'">
+      <!-- Your search interface -->
+    </div>
+    
+    <div v-else-if="status === 'error'">
+      Failed to load experience configuration
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { useState } from '@empathyco/x-components'
+
+const { status } = useState('experienceControls')
+</script>
+```
+
+### Cancel Requests
+
+Cancel ongoing requests when component unmounts:
+
+```vue
+<script setup>
+import { useState } from '@empathyco/x-components'
+import { onUnmounted } from 'vue'
+
+const { dispatch } = useState('experienceControls')
+
+onUnmounted(() => {
+  dispatch('cancelFetchAndSaveControls')
+})
+</script>
+```
+
+### Type-Safe Controls
+
+Define types for your controls:
+
+```typescript
+interface MyExperienceControls {
+  enableFacets: boolean
+  showRecommendations: boolean
+  resultsPerPage: number
+  sortOptions: string[]
+  layoutVariant: 'A' | 'B'
+  experimentId?: string
+}
+
+// Usage with type safety
+const { controls } = useState('experienceControls')
+const typedControls = controls as MyExperienceControls
+```
+
+## Best Practices
+
+1. **Define a clear schema** - Document all possible controls and their types
+2. **Provide defaults** - Always have fallback values when controls are missing
+3. **Version your controls** - Include version info to handle breaking changes
+4. **Test all variants** - Ensure all control combinations work correctly
+5. **Monitor performance** - Track impact of dynamic features on performance
+6. **Cache appropriately** - Balance between fresh config and performance
+7. **Handle errors gracefully** - Don't break the UI if controls fail to load
+8. **Log control changes** - Track which controls are active for debugging
+9. **Validate backend responses** - Ensure controls match expected schema
+10. **Document experiments** - Keep track of active A/B tests and their controls
+
+## Related Resources
+
+- [Search Module](/api/modules/search)
+- [X Modules](/concepts/x-modules)
+- [Event System](/concepts/event-system)

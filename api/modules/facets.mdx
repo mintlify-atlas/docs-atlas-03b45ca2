@@ -1,0 +1,454 @@
+---
+title: 'Facets Module'
+description: 'Faceted search and filtering functionality'
+icon: 'filter'
+---
+
+## Overview
+
+The Facets module manages faceted search functionality, including facet definitions, filters, filter selection state, and sticky filters. It handles fetching facets from the API and coordinating filter state with the search module.
+
+## State
+
+The Facets module maintains the following state:
+
+<ResponseField name="query" type="string">
+  Current query for facets request
+</ResponseField>
+
+<ResponseField name="facets" type="Record<string, Facet>">
+  Dictionary of facets by facet ID
+</ResponseField>
+
+<ResponseField name="filters" type="Record<string, Filter>">
+  Dictionary of all filters by filter ID
+</ResponseField>
+
+<ResponseField name="groups" type="Record<string, string>">
+  Mapping of facet IDs to group IDs
+</ResponseField>
+
+<ResponseField name="preselectedFilters" type="Filter[]">
+  Filters that should be preselected on load
+</ResponseField>
+
+<ResponseField name="stickyFilters" type="Record<string, Filter>">
+  Filters that persist across searches
+</ResponseField>
+
+<ResponseField name="status" type="'initial' | 'loading' | 'success' | 'error'">
+  Current request status
+</ResponseField>
+
+<ResponseField name="origin" type="string | null">
+  Origin of the facets request
+</ResponseField>
+
+<ResponseField name="params" type="Record<string, unknown>">
+  Additional request parameters
+</ResponseField>
+
+<ResponseField name="config" type="FacetsConfig">
+  Module configuration options
+</ResponseField>
+
+## Configuration
+
+<ParamField path="filtersStrategyForRequest" type="'all' | 'selected' | 'none'" default="'all'">
+  Which filters to include in facets request:
+  - `'all'` - Include all filters
+  - `'selected'` - Only include selected filters
+  - `'none'` - Don't include filters
+</ParamField>
+
+## Getters
+
+<ResponseField name="facets" type="Facet[]">
+  Array of all facets with their filters populated
+</ResponseField>
+
+<ResponseField name="selectedFilters" type="Filter[]">
+  Array of currently selected filters
+</ResponseField>
+
+<ResponseField name="selectedFiltersForRequest" type="Filter[]">
+  Selected filters formatted for API request based on filtersStrategyForRequest
+</ResponseField>
+
+<ResponseField name="selectedFiltersByFacet" type="Record<string, Filter[]>">
+  Selected filters grouped by facet ID
+</ResponseField>
+
+<ResponseField name="request" type="FacetsRequest">
+  Computed facets request object
+</ResponseField>
+
+## Mutations
+
+<ResponseField name="setQuery" type="(state, query: string) => void">
+  Update the query for facets
+</ResponseField>
+
+<ResponseField name="setFacet" type="(state, facet: Facet) => void">
+  Add or update a single facet
+</ResponseField>
+
+<ResponseField name="removeFacet" type="(state, { id: string }) => void">
+  Remove a facet by ID
+</ResponseField>
+
+<ResponseField name="setFilters" type="(state, filters: Filter[]) => void">
+  Add or update multiple filters
+</ResponseField>
+
+<ResponseField name="mutateFilter" type="(state, { filter: Filter, newFilterState: Partial<Filter> }) => void">
+  Update properties of an existing filter
+</ResponseField>
+
+<ResponseField name="removeFilter" type="(state, { id: string }) => void">
+  Remove a single filter
+</ResponseField>
+
+<ResponseField name="removeFilters" type="(state, filters: Filter[]) => void">
+  Remove multiple filters
+</ResponseField>
+
+<ResponseField name="setPreselectedFilters" type="(state, filters: Filter[]) => void">
+  Set filters that should be preselected
+</ResponseField>
+
+<ResponseField name="setFacetGroup" type="(state, { facetId: string, groupId: string }) => void">
+  Assign a facet to a group
+</ResponseField>
+
+<ResponseField name="setStickyFilter" type="(state, filter: Filter) => void">
+  Mark a filter as sticky
+</ResponseField>
+
+<ResponseField name="removeStickyFilter" type="(state, filter: Filter) => void">
+  Remove sticky status from a filter
+</ResponseField>
+
+<ResponseField name="clearStickyFilters" type="(state) => void">
+  Clear all sticky filters
+</ResponseField>
+
+<ResponseField name="setStatus" type="(state, status: Status) => void">
+  Update request status
+</ResponseField>
+
+<ResponseField name="setOrigin" type="(state, origin: string | null) => void">
+  Set the origin of facets request
+</ResponseField>
+
+<ResponseField name="setParams" type="(state, params: Record<string, unknown>) => void">
+  Update request parameters
+</ResponseField>
+
+## Actions
+
+<ResponseField name="fetchFacetsResponse" type="(context) => Promise<FacetsResponse>">
+  Fetch facets from the API without updating state
+</ResponseField>
+
+<ResponseField name="fetchAndSaveFacetsResponse" type="(context) => Promise<FacetsResponse>">
+  Fetch facets and update module state
+</ResponseField>
+
+<ResponseField name="cancelFetchAndSaveFacetsResponse" type="(context) => Promise<void>">
+  Cancel any in-progress facets request
+</ResponseField>
+
+<ResponseField name="saveOrigin" type="(context, origin: string) => void">
+  Save the origin of the facets request
+</ResponseField>
+
+## Events Emitted
+
+<ResponseField name="UserClickedAFilter" type="{ filter: Filter }">
+  Emitted when user selects/deselects a filter
+</ResponseField>
+
+<ResponseField name="UserClearedAllFilters" type="{ facetId?: string }">
+  Emitted when user clears filters
+</ResponseField>
+
+<ResponseField name="FacetsChanged" type="{ facets: Facet[] }">
+  Emitted when facets data is updated
+</ResponseField>
+
+<ResponseField name="SelectedFiltersChanged" type="{ filters: Filter[] }">
+  Emitted when selected filters change
+</ResponseField>
+
+## Usage Examples
+
+### Basic Filter Selection
+
+```typescript
+import { useStore } from 'vuex'
+import type { Filter } from '@empathyco/x-types'
+
+const store = useStore()
+
+// Get filter from facets
+const facets = store.getters['x/facets/facets']
+const categoryFacet = facets.find(f => f.id === 'category')
+const filter = categoryFacet.filters[0]
+
+// Toggle filter selection
+store.commit('x/facets/mutateFilter', {
+  filter,
+  newFilterState: { selected: !filter.selected }
+})
+
+// Fetch new search results with filter applied
+await store.dispatch('x/search/fetchAndSaveSearchResponse')
+```
+
+### Sticky Filters
+
+```typescript
+// Mark a filter as sticky (persists across searches)
+const filter = {
+  id: 'brand:nike',
+  facetId: 'brand',
+  label: 'Nike',
+  modelName: 'SimpleFilter',
+  selected: true,
+  totalResults: 150
+}
+
+store.commit('x/facets/setStickyFilter', filter)
+
+// Sticky filter will remain selected even when query changes
+store.commit('x/search/setQuery', 'running shoes')
+await store.dispatch('x/search/fetchAndSaveSearchResponse')
+
+// Remove sticky status
+store.commit('x/facets/removeStickyFilter', filter)
+```
+
+### Preselected Filters
+
+```typescript
+// Set filters that should be preselected on page load
+const preselectedFilters = [
+  {
+    id: 'category:shoes',
+    facetId: 'category',
+    label: 'Shoes',
+    modelName: 'SimpleFilter',
+    selected: true
+  }
+]
+
+store.commit('x/facets/setPreselectedFilters', preselectedFilters)
+```
+
+### Facet Groups
+
+```typescript
+// Organize facets into groups
+store.commit('x/facets/setFacetGroup', {
+  facetId: 'color',
+  groupId: 'attributes'
+})
+
+store.commit('x/facets/setFacetGroup', {
+  facetId: 'size',
+  groupId: 'attributes'
+})
+
+store.commit('x/facets/setFacetGroup', {
+  facetId: 'brand',
+  groupId: 'taxonomy'
+})
+```
+
+### Clear Filters
+
+```typescript
+// Clear all selected filters
+const selectedFilters = store.getters['x/facets/selectedFilters']
+
+selectedFilters.forEach(filter => {
+  store.commit('x/facets/mutateFilter', {
+    filter,
+    newFilterState: { selected: false }
+  })
+})
+
+await store.dispatch('x/search/fetchAndSaveSearchResponse')
+```
+
+### Component Integration
+
+```vue
+<template>
+  <div class="facets">
+    <div v-for="facet in facets" :key="facet.id" class="facet">
+      <h3 class="facet-title">{{ facet.label }}</h3>
+      
+      <div class="facet-filters">
+        <button
+          v-for="filter in facet.filters"
+          :key="filter.id"
+          :class="{ selected: filter.selected }"
+          @click="toggleFilter(filter)"
+        >
+          {{ filter.label }} ({{ filter.totalResults }})
+        </button>
+      </div>
+    </div>
+    
+    <button 
+      v-if="hasSelectedFilters" 
+      @click="clearAllFilters"
+    >
+      Clear All Filters
+    </button>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed } from 'vue'
+import { useStore } from 'vuex'
+import type { Filter, Facet } from '@empathyco/x-types'
+
+const store = useStore()
+
+const facets = computed<Facet[]>(() => store.getters['x/facets/facets'])
+const selectedFilters = computed<Filter[]>(() => store.getters['x/facets/selectedFilters'])
+const hasSelectedFilters = computed(() => selectedFilters.value.length > 0)
+
+const toggleFilter = async (filter: Filter) => {
+  store.commit('x/facets/mutateFilter', {
+    filter,
+    newFilterState: { selected: !filter.selected }
+  })
+  
+  // Reset to page 1 when filtering
+  store.commit('x/search/setPage', 1)
+  await store.dispatch('x/search/fetchAndSaveSearchResponse')
+}
+
+const clearAllFilters = async () => {
+  selectedFilters.value.forEach(filter => {
+    store.commit('x/facets/mutateFilter', {
+      filter,
+      newFilterState: { selected: false }
+    })
+  })
+  
+  store.commit('x/search/setPage', 1)
+  await store.dispatch('x/search/fetchAndSaveSearchResponse')
+}
+</script>
+```
+
+### Hierarchical Filters
+
+```vue
+<template>
+  <div class="hierarchical-facet">
+    <FilterTree :filters="rootFilters" @toggle="toggleFilter" />
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed } from 'vue'
+import type { HierarchicalFilter } from '@empathyco/x-types'
+import FilterTree from './FilterTree.vue'
+
+interface Props {
+  facetId: string
+}
+
+const props = defineProps<Props>()
+const store = useStore()
+
+const facet = computed(() => {
+  return store.state.x.facets.facets[props.facetId]
+})
+
+const rootFilters = computed(() => {
+  return facet.value?.filters.filter(
+    (f: HierarchicalFilter) => !f.parentId
+  )
+})
+</script>
+```
+
+## Filter Types
+
+### Simple Filter
+
+```typescript
+import type { Filter } from '@empathyco/x-types'
+
+interface SimpleFilter extends Filter {
+  id: string
+  facetId: string
+  label: string
+  selected: boolean
+  totalResults: number
+  modelName: 'SimpleFilter'
+}
+```
+
+### Hierarchical Filter
+
+```typescript
+import type { Filter } from '@empathyco/x-types'
+
+interface HierarchicalFilter extends Filter {
+  id: string
+  facetId: string
+  label: string
+  selected: boolean
+  totalResults: number
+  modelName: 'HierarchicalFilter'
+  parentId: string | null
+  children: HierarchicalFilter[]
+}
+```
+
+### Number Range Filter
+
+```typescript
+import type { Filter } from '@empathyco/x-types'
+
+interface NumberRangeFilter extends Filter {
+  id: string
+  facetId: string
+  label?: string
+  selected: boolean
+  modelName: 'NumberRangeFilter'
+  range: {
+    min: number
+    max: number
+  }
+}
+```
+
+## Related Modules
+
+- [Search Module](/api/modules/search) - Core search functionality
+- [URL Module](/api/modules/url) - URL parameter synchronization
+- [Tagging Module](/api/modules/tagging) - Filter interaction tracking
+
+## Type Reference
+
+Source: `/home/daytona/workspace/source/packages/x-components/src/x-modules/facets/store/module.ts:1`
+
+## Resources
+
+<CardGroup cols={2}>
+  <Card title="x-types" icon="brackets-curly" href="/api/x-types">
+    Type definitions for facets and filters
+  </Card>
+  <Card title="Search Module" icon="magnifying-glass" href="/api/modules/search">
+    Related search functionality
+  </Card>
+</CardGroup>

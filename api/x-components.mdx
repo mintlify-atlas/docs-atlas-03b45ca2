@@ -1,0 +1,228 @@
+---
+title: '@empathyco/x-components'
+description: 'Core Vue.js component library for building search experiences'
+icon: 'cube'
+---
+
+## Overview
+
+`@empathyco/x-components` is the main package of Interface X, providing a comprehensive set of Vue.js components for building powerful search and discovery experiences. It includes components, composables, directives, store modules, and utilities for creating e-commerce search interfaces.
+
+## Installation
+
+<CodeGroup>
+```bash npm
+npm install @empathyco/x-components vue vuex
+```
+
+```bash yarn
+yarn add @empathyco/x-components vue vuex
+```
+
+```bash pnpm
+pnpm add @empathyco/x-components vue vuex
+```
+</CodeGroup>
+
+## Peer Dependencies
+
+<ParamField path="vue" type="string" required>
+  Vue.js framework version ^3.5.28
+</ParamField>
+
+<ParamField path="vuex" type="string" required>
+  Vuex state management version 4.0.2
+</ParamField>
+
+## Main Exports
+
+The package exports functionality from multiple areas:
+
+### Components
+
+Pre-built Vue components for search experiences including:
+- Search box components
+- Results display components
+- Facet components
+- Recommendation components
+- History and suggestion components
+
+### Composables
+
+Vue 3 composition API utilities for:
+- State management
+- Event handling
+- Animation control
+- Device detection
+
+### Directives
+
+Custom Vue directives for enhanced functionality:
+- Infinite scroll
+- Click outside detection
+- Element visibility tracking
+
+### Store Modules
+
+Vuex store modules for managing:
+- Search state
+- Facets and filters
+- User queries
+- Recommendations
+- Tagging and analytics
+
+### X-Modules
+
+Core modules exported from the package:
+
+<ResponseField name="ai" type="module">
+  AI-powered search features
+</ResponseField>
+
+<ResponseField name="device" type="module">
+  Device detection and responsive behavior
+</ResponseField>
+
+<ResponseField name="empathize" type="module">
+  Query suggestions and autocomplete
+</ResponseField>
+
+<ResponseField name="facets" type="module">
+  Faceted search and filtering - [See Module Details](/api/modules/facets)
+</ResponseField>
+
+<ResponseField name="history-queries" type="module">
+  Search history management - [See Module Details](/api/modules/history-queries)
+</ResponseField>
+
+<ResponseField name="recommendations" type="module">
+  Product recommendations - [See Module Details](/api/modules/recommendations)
+</ResponseField>
+
+<ResponseField name="search" type="module">
+  Core search functionality - [See Module Details](/api/modules/search)
+</ResponseField>
+
+<ResponseField name="tagging" type="module">
+  Analytics and tracking - [See Module Details](/api/modules/tagging)
+</ResponseField>
+
+<ResponseField name="url" type="module">
+  URL synchronization - [See Module Details](/api/modules/url)
+</ResponseField>
+
+## Basic Usage
+
+```typescript
+import { createApp } from 'vue'
+import { createStore } from 'vuex'
+import { installXPlugin } from '@empathyco/x-components'
+import App from './App.vue'
+
+const app = createApp(App)
+
+// Create Vuex store
+const store = createStore({})
+
+// Install X Components plugin
+app.use(store)
+app.use(installXPlugin, {
+  adapter: myAdapter,
+  store
+})
+
+app.mount('#app')
+```
+
+## Component Example
+
+```vue
+<template>
+  <div class="search-interface">
+    <SearchBox />
+    <Facets />
+    <ResultsList />
+    <Recommendations />
+  </div>
+</template>
+
+<script setup lang="ts">
+import {
+  SearchBox,
+  Facets,
+  ResultsList,
+  Recommendations
+} from '@empathyco/x-components'
+</script>
+```
+
+## Configuration
+
+Each module can be configured with specific options:
+
+```typescript
+import { XPlugin } from '@empathyco/x-components'
+
+const xPluginOptions = {
+  adapter: myAdapter,
+  store,
+  initialXModules: {
+    search: {
+      config: {
+        pageSize: 24,
+        pageMode: 'infinite_scroll'
+      }
+    },
+    facets: {
+      config: {
+        filtersStrategyForRequest: 'all'
+      }
+    }
+  }
+}
+```
+
+## TypeScript Support
+
+The package includes full TypeScript definitions. Import types directly:
+
+```typescript
+import type {
+  SearchState,
+  FacetsState,
+  Result,
+  Facet
+} from '@empathyco/x-components'
+```
+
+## Key Interfaces
+
+<ResponseField name="XComponent" type="interface">
+  Base interface for all X Components with event handling and state access
+</ResponseField>
+
+<ResponseField name="XStoreModule" type="interface">
+  Interface for Vuex store modules including state, getters, mutations, and actions
+</ResponseField>
+
+<ResponseField name="XEvent" type="type">
+  Type definition for events in the X event bus system
+</ResponseField>
+
+## Related Packages
+
+- [@empathyco/x-adapter](/api/x-adapter) - API adapter utilities
+- [@empathyco/x-types](/api/x-types) - TypeScript type definitions
+- [@empathyco/x-tailwindcss](/api/x-tailwindcss) - Tailwind CSS plugin
+- [@empathyco/x-utils](/api/x-utils) - Utility functions
+
+## Resources
+
+<CardGroup cols={2}>
+  <Card title="Module Reference" icon="folder-tree" href="/api/modules/search">
+    Explore individual module documentation
+  </Card>
+  <Card title="GitHub Repository" icon="github" href="https://github.com/empathyco/x">
+    View source code and examples
+  </Card>
+</CardGroup>

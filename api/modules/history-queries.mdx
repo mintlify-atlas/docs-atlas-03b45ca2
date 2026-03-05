@@ -1,0 +1,468 @@
+---
+title: 'History Queries Module'
+description: 'Search history management and persistence'
+icon: 'clock-rotate-left'
+---
+
+## Overview
+
+The History Queries module manages user search history, storing queries in browser storage and providing access to recent searches. It supports session-based history, filtering, and integration with search suggestions.
+
+## State
+
+The History Queries module maintains the following state:
+
+<ResponseField name="query" type="string">
+  Current query for filtering history
+</ResponseField>
+
+<ResponseField name="historyQueries" type="HistoryQuery[]">
+  Array of stored search queries with metadata
+</ResponseField>
+
+<ResponseField name="sessionTimeStampInMs" type="number">
+  Timestamp for session tracking
+</ResponseField>
+
+<ResponseField name="isEnabled" type="boolean">
+  Whether history tracking is enabled (user can disable)
+</ResponseField>
+
+<ResponseField name="config" type="HistoryQueriesConfig">
+  Module configuration options
+</ResponseField>
+
+## Configuration
+
+<ParamField path="debounceInMs" type="number" default="150">
+  Debounce time before saving queries to history
+</ParamField>
+
+<ParamField path="maxItemsToStore" type="number" default="50">
+  Maximum number of queries to store in history
+</ParamField>
+
+<ParamField path="hideIfEqualsQuery" type="boolean" default="true">
+  Hide current query from history suggestions
+</ParamField>
+
+<ParamField path="sessionTTLInMs" type="number" default="1800000">
+  Session time-to-live in milliseconds (default: 30 minutes)
+</ParamField>
+
+## Getters
+
+<ResponseField name="historyQueries" type="HistoryQuery[]">
+  Filtered history queries based on current query and config
+</ResponseField>
+
+<ResponseField name="normalizedQuery" type="string">
+  Normalized version of current query for matching
+</ResponseField>
+
+<ResponseField name="historyQueriesWithResults" type="HistoryQuery[]">
+  History queries that have associated results
+</ResponseField>
+
+<ResponseField name="sessionHistoryQueries" type="HistoryQuery[]">
+  History queries from current session only
+</ResponseField>
+
+<ResponseField name="storageKey" type="string">
+  Key used for browser storage
+</ResponseField>
+
+## Mutations
+
+<ResponseField name="setQuery" type="(state, query: string) => void">
+  Update the current query
+</ResponseField>
+
+<ResponseField name="setHistoryQueries" type="(state, queries: HistoryQuery[]) => void">
+  Replace all history queries
+</ResponseField>
+
+<ResponseField name="setSessionTimeStamp" type="(state, timestamp: number) => void">
+  Update session timestamp
+</ResponseField>
+
+<ResponseField name="setIsEnabled" type="(state, enabled: boolean) => void">
+  Enable or disable history tracking
+</ResponseField>
+
+<ResponseField name="setSearchSelectedFilters" type="(state, filters: Filter[]) => void">
+  Update selected filters for the most recent query
+</ResponseField>
+
+<ResponseField name="setConfig" type="(state, config: Partial<HistoryQueriesConfig>) => void">
+  Update configuration
+</ResponseField>
+
+<ResponseField name="mergeConfig" type="(state, config: Partial<HistoryQueriesConfig>) => void">
+  Merge configuration with existing config
+</ResponseField>
+
+## Actions
+
+<ResponseField name="addQueryToHistory" type="(context, query: string) => void">
+  Add a new query to history
+</ResponseField>
+
+<ResponseField name="removeFromHistory" type="(context, query: string) => void">
+  Remove a specific query from history
+</ResponseField>
+
+<ResponseField name="setHistoryQueries" type="(context, queries: HistoryQuery[]) => void">
+  Set history queries and save to storage
+</ResponseField>
+
+<ResponseField name="loadHistoryQueriesFromBrowserStorage" type="(context) => void">
+  Load saved queries from browser storage
+</ResponseField>
+
+<ResponseField name="refreshSession" type="(context) => void">
+  Refresh session timestamp
+</ResponseField>
+
+<ResponseField name="toggleHistoryQueries" type="(context) => void">
+  Toggle history tracking on/off
+</ResponseField>
+
+<ResponseField name="updateHistoryQueriesWithSearchResponse" type="(context, response: SearchResponse) => void">
+  Update history query with search results metadata
+</ResponseField>
+
+<ResponseField name="setUrlParams" type="(context, params: Record<string, unknown>) => void">
+  Update from URL parameters
+</ResponseField>
+
+## Events Emitted
+
+<ResponseField name="UserClickedAHistoryQuery" type="{ query: string }">
+  Emitted when user clicks a history query
+</ResponseField>
+
+<ResponseField name="UserRemovedAHistoryQuery" type="{ query: string }">
+  Emitted when user removes a query from history
+</ResponseField>
+
+<ResponseField name="UserToggledHistoryQueries" type="{ enabled: boolean }">
+  Emitted when user enables/disables history tracking
+</ResponseField>
+
+<ResponseField name="HistoryQueriesChanged" type="{ queries: HistoryQuery[] }">
+  Emitted when history queries are updated
+</ResponseField>
+
+## Usage Examples
+
+### Basic History Tracking
+
+```typescript
+import { useStore } from 'vuex'
+
+const store = useStore()
+
+// Load history on app initialization
+store.dispatch('x/historyQueries/loadHistoryQueriesFromBrowserStorage')
+
+// Add query to history after search
+const query = 'running shoes'
+store.dispatch('x/historyQueries/addQueryToHistory', query)
+
+// Get history queries
+const historyQueries = store.getters['x/historyQueries/historyQueries']
+```
+
+### Configuration
+
+```typescript
+// Configure history behavior
+store.commit('x/historyQueries/setConfig', {
+  maxItemsToStore: 20,
+  debounceInMs: 200,
+  hideIfEqualsQuery: true,
+  sessionTTLInMs: 60 * 60 * 1000 // 1 hour
+})
+```
+
+### Toggle History Tracking
+
+```typescript
+// Let users disable/enable history tracking
+const isEnabled = store.state.x.historyQueries.isEnabled
+
+store.dispatch('x/historyQueries/toggleHistoryQueries')
+// isEnabled is now toggled and saved to localStorage
+```
+
+### Remove from History
+
+```typescript
+// Remove a specific query
+const queryToRemove = 'old search'
+store.dispatch('x/historyQueries/removeFromHistory', queryToRemove)
+```
+
+### Component Integration
+
+```vue
+<template>
+  <div class="search-history">
+    <div class="history-header">
+      <h3>Recent Searches</h3>
+      <button @click="toggleTracking">
+        {{ isEnabled ? 'Disable' : 'Enable' }} History
+      </button>
+    </div>
+    
+    <div v-if="isEnabled && hasHistory" class="history-list">
+      <div
+        v-for="item in historyQueries"
+        :key="item.query"
+        class="history-item"
+      >
+        <button 
+          class="history-query"
+          @click="selectHistoryQuery(item.query)"
+        >
+          <span class="query-icon">🕐</span>
+          <span class="query-text">{{ item.query }}</span>
+          <span v-if="item.totalResults" class="query-results">
+            {{ item.totalResults }} results
+          </span>
+        </button>
+        
+        <button 
+          class="remove-button"
+          @click.stop="removeQuery(item.query)"
+          title="Remove from history"
+        >
+          ✕
+        </button>
+      </div>
+    </div>
+    
+    <div v-else-if="!isEnabled" class="history-disabled">
+      History tracking is disabled
+    </div>
+    
+    <div v-else class="no-history">
+      No search history yet
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed, onMounted } from 'vue'
+import { useStore } from 'vuex'
+import type { HistoryQuery } from '@empathyco/x-types'
+
+const store = useStore()
+
+const historyQueries = computed<HistoryQuery[]>(
+  () => store.getters['x/historyQueries/historyQueries']
+)
+
+const isEnabled = computed(
+  () => store.state.x.historyQueries.isEnabled
+)
+
+const hasHistory = computed(
+  () => historyQueries.value.length > 0
+)
+
+onMounted(() => {
+  store.dispatch('x/historyQueries/loadHistoryQueriesFromBrowserStorage')
+})
+
+const selectHistoryQuery = async (query: string) => {
+  // Set query and trigger search
+  store.commit('x/search/setQuery', query)
+  await store.dispatch('x/search/fetchAndSaveSearchResponse')
+  
+  // Track event
+  store.dispatch('x/tagging/track', {
+    event: 'UserClickedAHistoryQuery',
+    query
+  })
+}
+
+const removeQuery = (query: string) => {
+  store.dispatch('x/historyQueries/removeFromHistory', query)
+}
+
+const toggleTracking = () => {
+  store.dispatch('x/historyQueries/toggleHistoryQueries')
+}
+</script>
+```
+
+### Search Box with History
+
+```vue
+<template>
+  <div class="search-box">
+    <input
+      v-model="query"
+      @input="onQueryChange"
+      @focus="showSuggestions = true"
+      placeholder="Search..."
+    />
+    
+    <div v-if="showSuggestions && hasHistoryOrSuggestions" class="suggestions">
+      <!-- History Section -->
+      <div v-if="historyQueries.length" class="suggestions-section">
+        <div class="section-title">Recent Searches</div>
+        <button
+          v-for="item in historyQueries"
+          :key="item.query"
+          class="suggestion-item history"
+          @click="selectQuery(item.query)"
+        >
+          🕐 {{ item.query }}
+        </button>
+      </div>
+      
+      <!-- Query Suggestions Section -->
+      <div v-if="querySuggestions.length" class="suggestions-section">
+        <div class="section-title">Suggestions</div>
+        <button
+          v-for="suggestion in querySuggestions"
+          :key="suggestion.query"
+          class="suggestion-item"
+          @click="selectQuery(suggestion.query)"
+        >
+          🔍 {{ suggestion.query }}
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import { useStore } from 'vuex'
+
+const store = useStore()
+const query = ref('')
+const showSuggestions = ref(false)
+
+const historyQueries = computed(
+  () => store.getters['x/historyQueries/historyQueries'].slice(0, 5)
+)
+
+const querySuggestions = computed(
+  () => store.state.x.querySuggestions.suggestions
+)
+
+const hasHistoryOrSuggestions = computed(
+  () => historyQueries.value.length > 0 || querySuggestions.value.length > 0
+)
+
+const onQueryChange = () => {
+  store.commit('x/historyQueries/setQuery', query.value)
+  store.commit('x/querySuggestions/setQuery', query.value)
+  store.dispatch('x/querySuggestions/fetchSuggestions')
+}
+
+const selectQuery = async (selectedQuery: string) => {
+  query.value = selectedQuery
+  showSuggestions.value = false
+  
+  store.commit('x/search/setQuery', selectedQuery)
+  await store.dispatch('x/search/fetchAndSaveSearchResponse')
+  
+  // Add to history
+  store.dispatch('x/historyQueries/addQueryToHistory', selectedQuery)
+}
+</script>
+```
+
+### Session-Based History
+
+```typescript
+// Get only queries from current session
+const sessionQueries = store.getters['x/historyQueries/sessionHistoryQueries']
+
+// Refresh session timestamp (e.g., on user activity)
+store.dispatch('x/historyQueries/refreshSession')
+
+// Check session TTL
+const sessionTTL = store.state.x.historyQueries.config.sessionTTLInMs
+const lastActivity = store.state.x.historyQueries.sessionTimeStampInMs
+const isSessionExpired = Date.now() - lastActivity > sessionTTL
+
+if (isSessionExpired) {
+  store.dispatch('x/historyQueries/refreshSession')
+}
+```
+
+### Integration with Search Results
+
+```typescript
+import { watch } from 'vue'
+
+// Update history queries with search results
+watch(
+  () => store.state.x.search.status,
+  (status) => {
+    if (status === 'success') {
+      const response = {
+        results: store.state.x.search.results,
+        totalResults: store.state.x.search.totalResults,
+        facets: store.state.x.search.facets
+      }
+      
+      store.dispatch(
+        'x/historyQueries/updateHistoryQueriesWithSearchResponse',
+        response
+      )
+    }
+  }
+)
+```
+
+## HistoryQuery Interface
+
+```typescript
+import type { Filter } from '@empathyco/x-types'
+
+interface HistoryQuery {
+  query: string
+  timestamp: number
+  totalResults?: number
+  selectedFilters?: Filter[]
+  modelName: 'HistoryQuery'
+}
+```
+
+## Storage
+
+History queries are stored in browser localStorage by default:
+
+- **Storage Key**: `x-history-queries-{instanceId}`
+- **Data Format**: JSON array of HistoryQuery objects
+- **Persistence**: Survives page refreshes and browser restarts
+- **Privacy**: Users can disable tracking, which also saves to localStorage
+
+## Related Modules
+
+- [Search Module](/api/modules/search) - Core search functionality
+- [Tagging Module](/api/modules/tagging) - Track history interactions
+- Query Suggestions Module - Combine with autocomplete suggestions
+
+## Type Reference
+
+Source: `/home/daytona/workspace/source/packages/x-components/src/x-modules/history-queries/store/module.ts:1`
+
+## Resources
+
+<CardGroup cols={2}>
+  <Card title="x-types" icon="brackets-curly" href="/api/x-types">
+    HistoryQuery type definition
+  </Card>
+  <Card title="Search Module" icon="magnifying-glass" href="/api/modules/search">
+    Related search functionality
+  </Card>
+</CardGroup>

@@ -1,0 +1,351 @@
+---
+title: '@empathyco/x-types'
+description: 'TypeScript type definitions and models for Empathy search'
+icon: 'brackets-curly'
+---
+
+## Overview
+
+`@empathyco/x-types` provides comprehensive TypeScript type definitions and interfaces for building search experiences with Interface X. It includes models for requests, responses, facets, results, and all search-related entities.
+
+## Installation
+
+<CodeGroup>
+```bash npm
+npm install @empathyco/x-types
+```
+
+```bash yarn
+yarn add @empathyco/x-types
+```
+
+```bash pnpm
+pnpm add @empathyco/x-types
+```
+</CodeGroup>
+
+## Main Exports
+
+### Core Models
+
+<ResponseField name="Result" type="interface">
+  Product or content result from search
+</ResponseField>
+
+<ResponseField name="Facet" type="interface">
+  Facet definition with filters for refining search results
+</ResponseField>
+
+<ResponseField name="Filter" type="interface">
+  Individual filter option within a facet
+</ResponseField>
+
+<ResponseField name="Banner" type="interface">
+  Promotional banner in search results
+</ResponseField>
+
+<ResponseField name="Promoted" type="interface">
+  Promoted result with special positioning
+</ResponseField>
+
+<ResponseField name="Suggestion" type="interface">
+  Query suggestion for autocomplete
+</ResponseField>
+
+<ResponseField name="HistoryQuery" type="interface">
+  Historical search query with metadata
+</ResponseField>
+
+<ResponseField name="Redirection" type="interface">
+  URL redirection for specific queries
+</ResponseField>
+
+### Request Types
+
+<ResponseField name="SearchRequest" type="interface">
+  Request parameters for search queries
+</ResponseField>
+
+<ResponseField name="RecommendationsRequest" type="interface">
+  Request parameters for recommendations
+</ResponseField>
+
+<ResponseField name="RelatedTagsRequest" type="interface">
+  Request parameters for related tags
+</ResponseField>
+
+### Response Types
+
+<ResponseField name="SearchResponse" type="interface">
+  Complete search response with results, facets, and metadata
+</ResponseField>
+
+<ResponseField name="RecommendationsResponse" type="interface">
+  Recommendations response with suggested items
+</ResponseField>
+
+<ResponseField name="FacetsResponse" type="interface">
+  Facets and filters response
+</ResponseField>
+
+### Utility Types
+
+<ResponseField name="Identifiable" type="interface">
+  Base interface for entities with an ID
+</ResponseField>
+
+<ResponseField name="NamedModel" type="interface">
+  Interface for entities with name and model name
+</ResponseField>
+
+<ResponseField name="Previewable" type="interface">
+  Interface for items that can show preview results
+</ResponseField>
+
+<ResponseField name="PartialResult" type="interface">
+  Partial search result information
+</ResponseField>
+
+## Common Type Examples
+
+### Result Interface
+
+```typescript
+import type { Result } from '@empathyco/x-types'
+
+interface Result extends Identifiable {
+  id: string
+  modelName: 'Result'
+  name?: string
+  description?: string
+  images?: string[]
+  url?: string
+  price?: {
+    value: number
+    currency?: string
+  }
+  rating?: {
+    value: number
+  }
+  isWishlisted?: boolean
+  // Additional custom fields
+  [key: string]: unknown
+}
+```
+
+### Facet Interface
+
+```typescript
+import type { Facet, Filter } from '@empathyco/x-types'
+
+interface Facet extends Identifiable {
+  id: string
+  modelName: 'Facet'
+  label?: string
+  filters: Filter[]
+}
+
+interface Filter extends Identifiable {
+  id: string
+  modelName: string
+  facetId: string
+  label?: string
+  totalResults?: number
+  selected: boolean
+}
+```
+
+### Search Request
+
+```typescript
+import type { SearchRequest } from '@empathyco/x-types'
+
+interface SearchRequest {
+  query: string
+  rows?: number
+  start?: number
+  filters?: Record<string, string[]>
+  sort?: string
+  extraParams?: Record<string, unknown>
+}
+```
+
+### Search Response
+
+```typescript
+import type { SearchResponse, Result, Facet, Banner } from '@empathyco/x-types'
+
+interface SearchResponse {
+  results: Result[]
+  facets: Facet[]
+  totalResults: number
+  banners?: Banner[]
+  promoteds?: Result[]
+  partialResults?: Result[]
+  redirections?: Redirection[]
+  spellcheck?: string
+  queryTagging?: TaggingInfo
+  displayTagging?: TaggingInfo
+}
+```
+
+## Type Guards
+
+The package includes type guard functions:
+
+```typescript
+import { isFacetFilter, isHierarchicalFilter } from '@empathyco/x-types'
+
+if (isFacetFilter(filter)) {
+  // TypeScript knows filter has facetId property
+  console.log(filter.facetId)
+}
+
+if (isHierarchicalFilter(filter)) {
+  // TypeScript knows filter has children property
+  console.log(filter.children)
+}
+```
+
+## AI Models
+
+<ResponseField name="AIQueryMetadata" type="interface">
+  Metadata for AI-powered queries
+</ResponseField>
+
+<ResponseField name="AIResponse" type="interface">
+  Response format for AI features
+</ResponseField>
+
+## Tagging Models
+
+<ResponseField name="TaggingRequest" type="interface">
+  Request format for tracking events
+</ResponseField>
+
+<ResponseField name="TaggingInfo" type="interface">
+  Tagging information included in responses
+</ResponseField>
+
+## User Info
+
+```typescript
+import type { UserInfo } from '@empathyco/x-types'
+
+interface UserInfo {
+  userId?: string
+  sessionId?: string
+  [key: string]: unknown
+}
+```
+
+## Sort Model
+
+```typescript
+import type { Sort } from '@empathyco/x-types'
+
+type Sort = string
+```
+
+## Stats Model
+
+```typescript
+import type { Stats } from '@empathyco/x-types'
+
+interface Stats {
+  queryTime?: number
+  totalTime?: number
+  numFound?: number
+}
+```
+
+## Using with X Components
+
+```typescript
+import { defineComponent } from 'vue'
+import type { Result, Facet } from '@empathyco/x-types'
+import type { SearchState } from '@empathyco/x-components'
+
+export default defineComponent({
+  computed: {
+    results(): Result[] {
+      return this.$store.state.x.search.results
+    },
+    facets(): Facet[] {
+      return this.$store.state.x.facets.facets
+    }
+  }
+})
+```
+
+## Adapter Integration
+
+```typescript
+import type { SearchRequest, SearchResponse } from '@empathyco/x-types'
+import { endpointAdapterFactory } from '@empathyco/x-adapter'
+
+const searchAdapter = endpointAdapterFactory<SearchRequest, SearchResponse>({
+  endpoint: '/api/search',
+  requestMapper: (request) => ({
+    q: request.query,
+    size: request.rows || 24,
+    filters: request.filters
+  }),
+  responseMapper: (response) => ({
+    results: response.results,
+    facets: response.facets,
+    totalResults: response.totalResults
+  })
+})
+```
+
+## X Components Adapter
+
+```typescript
+import type { XComponentsAdapter } from '@empathyco/x-types'
+
+interface XComponentsAdapter {
+  search: EndpointAdapter<SearchRequest, SearchResponse>
+  recommendations: EndpointAdapter<RecommendationsRequest, RecommendationsResponse>
+  relatedTags: EndpointAdapter<RelatedTagsRequest, RelatedTagsResponse>
+  // ... other endpoints
+}
+```
+
+## Custom Extensions
+
+Extend types for your use case:
+
+```typescript
+import type { Result } from '@empathyco/x-types'
+
+interface CustomResult extends Result {
+  availability: 'in_stock' | 'out_of_stock'
+  brand: string
+  categories: string[]
+  customField: string
+}
+```
+
+## Dependencies
+
+The package depends on:
+
+- `@empathyco/x-adapter` - Adapter interfaces
+- `@empathyco/x-utils` - Utility types
+
+## Related Packages
+
+- [@empathyco/x-components](/api/x-components) - Component library using these types
+- [@empathyco/x-adapter](/api/x-adapter) - Adapter utilities
+
+## Resources
+
+<CardGroup cols={2}>
+  <Card title="GitHub Repository" icon="github" href="https://github.com/empathyco/x">
+    View source code and type definitions
+  </Card>
+  <Card title="TypeScript Documentation" icon="book" href="https://www.typescriptlang.org">
+    Learn more about TypeScript
+  </Card>
+</CardGroup>

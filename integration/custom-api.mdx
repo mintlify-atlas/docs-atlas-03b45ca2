@@ -1,0 +1,643 @@
+---
+title: Custom API Integration
+description: Create custom adapters to integrate Interface X with any search API
+---
+
+# Custom API Integration
+
+Interface X can integrate with any search API by creating a custom adapter. This guide walks you through building an adapter from scratch.
+
+## Overview
+
+Building a custom adapter involves:
+
+1. Defining your API and app data models
+2. Creating request and response mappers
+3. Building endpoint adapters
+4. Combining them into a complete adapter
+
+## Step-by-Step Guide
+
+### Step 1: Define Your Types
+
+Define the types for both your API and your application:
+
+<CodeGroup>
+```typescript API Types
+// types/api.ts
+
+// What your API expects
+export interface ApiSearchRequest {
+  q: string
+  max_results?: number
+  offset?: number
+  filters?: Array<{
+    field: string
+    values: string[]
+  }>
+}
+
+// What your API returns
+export interface ApiSearchResponse {
+  items: Array<{
+    id: string
+    title: string
+    description: string
+    image_url: string
+    price: number
+    currency: string
+  }>
+  total_count: number
+  has_more: boolean
+}
+```
+
+```typescript App Types
+// types/app.ts
+import type { Result, Filter } from '@empathyco/x-types'
+
+// What your app sends
+export interface AppSearchRequest {
+  query: string
+  rows?: number
+  start?: number
+  filters?: Filter[]
+}
+
+// What your app expects
+export interface AppSearchResponse {
+  results: Result[]
+  totalResults: number
+}
+```
+</CodeGroup>
+
+### Step 2: Create Mappers
+
+Create functions to transform between API and app formats.
+
+#### Using Mapper Functions
+
+<CodeGroup>
+```typescript Request Mapper
+// mappers/search-request.mapper.ts
+import type { AppSearchRequest } from '../types/app'
+import type { ApiSearchRequest } from '../types/api'
+
+export function searchRequestMapper(
+  request: AppSearchRequest
+): ApiSearchRequest {
+  return {
+    q: request.query,
+    max_results: request.rows ?? 24,
+    offset: request.start ?? 0,
+    filters: request.filters?.map(filter => ({
+      field: filter.id,
+      values: filter.values?.map(v => v.id) ?? [],
+    })),
+  }
+}
+```
+
+```typescript Response Mapper
+// mappers/search-response.mapper.ts
+import type { AppSearchResponse } from '../types/app'
+import type { ApiSearchResponse } from '../types/api'
+import type { Result } from '@empathyco/x-types'
+
+export function searchResponseMapper(
+  response: ApiSearchResponse
+): AppSearchResponse {
+  return {
+    results: response.items.map<Result>(item => ({
+      id: item.id,
+      name: item.title,
+      description: item.description,
+      images: [item.image_url],
+      price: {
+        value: item.price,
+        currency: item.currency,
+      },
+      // Required Result fields
+      modelName: 'Result',
+      type: 'Default',
+    })),
+    totalResults: response.total_count,
+  }
+}
+```
+</CodeGroup>
+
+#### Using Schema Mappers
+
+For simpler mappings, use schema mappers:
+
+```typescript
+import { schemaMapperFactory } from '@empathyco/x-adapter'
+import type { Schema } from '@empathyco/x-adapter'
+import type { Result } from '@empathyco/x-types'
+
+// Define a schema for mapping API items to Results
+const resultSchema: Schema<ApiItem, Result> = {
+  id: 'id',
+  name: 'title',
+  description: 'description',
+  images: ({ image_url }) => [image_url],
+  price: ({ price, currency }) => ({
+    value: price,
+    currency,
+  }),
+  modelName: () => 'Result',
+  type: () => 'Default',
+}
+
+// Create the mapper
+export const searchResponseMapper = schemaMapperFactory<
+  ApiSearchResponse,
+  AppSearchResponse
+>({
+  results: {
+    $subSchema: resultSchema,
+    $path: 'items',
+  },
+  totalResults: 'total_count',
+})
+```
+
+Source: `/home/daytona/workspace/source/packages/x-adapter/README.md:234`
+
+### Step 3: Create Endpoint Adapters
+
+Use the `endpointAdapterFactory` to create endpoint adapters:
+
+```typescript
+// adapters/search.adapter.ts
+import { endpointAdapterFactory } from '@empathyco/x-adapter'
+import type { AppSearchRequest, AppSearchResponse } from '../types/app'
+import { searchRequestMapper } from '../mappers/search-request.mapper'
+import { searchResponseMapper } from '../mappers/search-response.mapper'
+
+export const searchEndpointAdapter = endpointAdapterFactory<
+  AppSearchRequest,
+  AppSearchResponse
+>({
+  endpoint: 'https://api.yourservice.com/search',
+  requestMapper: searchRequestMapper,
+  responseMapper: searchResponseMapper,
+  defaultRequestOptions: {
+    id: 'search',
+    properties: {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': process.env.API_KEY || '',
+      },
+    },
+  },
+})
+```
+
+Source: `/home/daytona/workspace/source/packages/x-adapter/README.md:108`
+
+### Step 4: Create Additional Endpoints
+
+Create adapters for other endpoints you need:
+
+<CodeGroup>
+```typescript Suggestions
+// adapters/suggestions.adapter.ts
+import { endpointAdapterFactory } from '@empathyco/x-adapter'
+
+export const suggestionsEndpointAdapter = endpointAdapterFactory<
+  { query: string },
+  { suggestions: string[] }
+>({
+  endpoint: 'https://api.yourservice.com/suggestions',
+  requestMapper: ({ query }) => ({ q: query }),
+  responseMapper: ({ items }) => ({
+    suggestions: items.map(item => item.text),
+  }),
+})
+```
+
+```typescript Recommendations
+// adapters/recommendations.adapter.ts
+import { endpointAdapterFactory } from '@empathyco/x-adapter'
+import { resultSchema } from '../schemas/result.schema'
+import { schemaMapperFactory } from '@empathyco/x-adapter'
+
+export const recommendationsEndpointAdapter = endpointAdapterFactory({
+  endpoint: 'https://api.yourservice.com/recommendations',
+  requestMapper: ({ limit }) => ({ max_items: limit ?? 10 }),
+  responseMapper: schemaMapperFactory({
+    results: {
+      $subSchema: resultSchema,
+      $path: 'items',
+    },
+  }),
+})
+```
+
+```typescript Facets
+// adapters/facets.adapter.ts
+import { endpointAdapterFactory } from '@empathyco/x-adapter'
+import type { Facet } from '@empathyco/x-types'
+
+export const facetsEndpointAdapter = endpointAdapterFactory({
+  endpoint: 'https://api.yourservice.com/facets',
+  requestMapper: ({ query }) => ({ q: query }),
+  responseMapper: ({ facets }) => ({
+    facets: facets.map<Facet>(f => ({
+      id: f.field,
+      label: f.label,
+      modelName: 'SimpleFacet',
+      filters: f.values.map(v => ({
+        id: v.value,
+        label: v.label,
+        totalResults: v.count,
+        selected: false,
+        modelName: 'SimpleFilter',
+        facetId: f.field,
+      })),
+    })),
+  }),
+})
+```
+</CodeGroup>
+
+### Step 5: Combine into an Adapter
+
+Create a main adapter object that exports all endpoint adapters:
+
+```typescript
+// adapters/index.ts
+import { searchEndpointAdapter } from './search.adapter'
+import { suggestionsEndpointAdapter } from './suggestions.adapter'
+import { recommendationsEndpointAdapter } from './recommendations.adapter'
+import { facetsEndpointAdapter } from './facets.adapter'
+
+export const myAdapter = {
+  search: searchEndpointAdapter,
+  querySuggestions: suggestionsEndpointAdapter,
+  recommendations: recommendationsEndpointAdapter,
+  facets: facetsEndpointAdapter,
+}
+
+export type MyAdapter = typeof myAdapter
+```
+
+### Step 6: Use Your Adapter
+
+Use the adapter in your application:
+
+```typescript
+import { myAdapter } from './adapters'
+
+async function performSearch(query: string) {
+  try {
+    const response = await myAdapter.search({
+      query,
+      rows: 24,
+      start: 0,
+    })
+    
+    console.log(`Found ${response.totalResults} results`)
+    console.log(response.results)
+  } catch (error) {
+    console.error('Search failed:', error)
+  }
+}
+```
+
+## Advanced Patterns
+
+### Dynamic Endpoints
+
+Use dynamic endpoints for multi-tenant or language-specific APIs:
+
+```typescript
+export const searchEndpointAdapter = endpointAdapterFactory({
+  endpoint: ({ locale, tenant }) => 
+    `https://${tenant}.api.example.com/${locale}/search`,
+  requestMapper: ({ query, locale, tenant, ...rest }) => ({
+    q: query,
+    ...rest,
+  }),
+  responseMapper: searchResponseMapper,
+})
+
+// Usage
+await searchEndpointAdapter({
+  query: 'shoes',
+  locale: 'en-US',
+  tenant: 'acme',
+})
+// Calls: https://acme.api.example.com/en-US/search
+```
+
+Source: `/home/daytona/workspace/source/packages/x-adapter/README.md:162`
+
+### Custom HTTP Client
+
+Use a custom HTTP client for authentication or custom logic:
+
+```typescript
+import axios from 'axios'
+import type { HttpClient } from '@empathyco/x-adapter'
+
+const authenticatedClient: HttpClient = async (endpoint, options) => {
+  // Get auth token
+  const token = await getAuthToken()
+  
+  // Make request with auth
+  const response = await axios.get(endpoint, {
+    params: options?.parameters,
+    headers: {
+      ...options?.properties?.headers,
+      Authorization: `Bearer ${token}`,
+    },
+  })
+  
+  return response.data
+}
+
+export const searchEndpointAdapter = endpointAdapterFactory({
+  endpoint: 'https://api.example.com/search',
+  httpClient: authenticatedClient,
+  requestMapper,
+  responseMapper,
+})
+```
+
+### Reusable Schemas
+
+Create reusable schemas for common data structures:
+
+```typescript
+import { createMutableSchema } from '@empathyco/x-adapter'
+import type { Result } from '@empathyco/x-types'
+
+// Base product schema
+export const productSchema = createMutableSchema<ApiProduct, Result>({
+  id: 'id',
+  name: 'name',
+  description: 'description',
+  images: 'images',
+  price: ({ price, currency }) => ({ value: price, currency }),
+  modelName: () => 'Result',
+  type: () => 'Default',
+})
+
+// Extend for specific endpoints
+export const searchProductSchema = productSchema.$extends({
+  // Add search-specific fields
+  score: 'relevance_score',
+})
+
+export const recommendationProductSchema = productSchema.$extends({
+  // Add recommendation-specific fields
+  reason: 'recommendation_reason',
+})
+```
+
+Source: `/home/daytona/workspace/source/packages/x-adapter/README.md:410`
+
+### Error Handling
+
+Add error handling to your adapters:
+
+```typescript
+import { endpointAdapterFactory } from '@empathyco/x-adapter'
+
+export const searchEndpointAdapter = endpointAdapterFactory({
+  endpoint: 'https://api.example.com/search',
+  requestMapper,
+  responseMapper: (response, context) => {
+    // Check for API-level errors
+    if (response.error) {
+      throw new Error(`API Error: ${response.error.message}`)
+    }
+    
+    // Transform successful response
+    return {
+      results: response.items.map(transformItem),
+      totalResults: response.total,
+    }
+  },
+})
+
+// Usage with error handling
+try {
+  const response = await searchEndpointAdapter({ query: 'shoes' })
+} catch (error) {
+  if (error instanceof Error) {
+    console.error('Search failed:', error.message)
+  }
+}
+```
+
+### Request Transformation Context
+
+Access the endpoint and other context in mappers:
+
+```typescript
+import type { MapperContext } from '@empathyco/x-adapter'
+
+const responseMapper = (
+  response: ApiResponse,
+  context: MapperContext
+) => {
+  console.log('Request was made to:', context.endpoint)
+  console.log('With parameters:', context.requestParameters)
+  
+  return {
+    results: response.items.map(transformItem),
+    totalResults: response.total,
+    // Include metadata
+    metadata: {
+      endpoint: context.endpoint,
+    },
+  }
+}
+```
+
+## Complete Example
+
+Here's a complete example adapter for a fictional commerce API:
+
+<CodeGroup>
+```typescript Adapter
+// src/adapters/commerce-adapter.ts
+import { endpointAdapterFactory, schemaMapperFactory } from '@empathyco/x-adapter'
+import type { Result, Facet, Filter } from '@empathyco/x-types'
+
+// === TYPES ===
+interface CommerceSearchRequest {
+  query: string
+  rows?: number
+  start?: number
+  filters?: Filter[]
+}
+
+interface CommerceProduct {
+  sku: string
+  title: string
+  description: string
+  thumbnail: string
+  price: number
+  brand: string
+  category: string
+}
+
+interface CommerceSearchResponse {
+  products: CommerceProduct[]
+  total: number
+  facets: Array<{
+    name: string
+    values: Array<{ value: string; count: number }>
+  }>
+}
+
+// === SCHEMAS ===
+const productSchema = schemaMapperFactory<CommerceProduct, Result>({
+  id: 'sku',
+  name: 'title',
+  description: 'description',
+  images: ({ thumbnail }) => [thumbnail],
+  price: ({ price }) => ({ value: price, currency: 'USD' }),
+  modelName: () => 'Result',
+  type: () => 'Default',
+})
+
+// === ENDPOINT ADAPTERS ===
+export const searchAdapter = endpointAdapterFactory<
+  CommerceSearchRequest,
+  { results: Result[]; totalResults: number; facets: Facet[] }
+>({
+  endpoint: 'https://commerce.example.com/api/search',
+  
+  requestMapper: ({ query, rows = 24, start = 0, filters = [] }) => ({
+    q: query,
+    limit: rows,
+    offset: start,
+    filters: filters.map(f => `${f.id}:${f.values?.map(v => v.id).join(',')}`),
+  }),
+  
+  responseMapper: schemaMapperFactory({
+    results: {
+      $subSchema: productSchema,
+      $path: 'products',
+    },
+    totalResults: 'total',
+    facets: ({ facets }) =>
+      facets.map<Facet>(f => ({
+        id: f.name,
+        label: f.name,
+        modelName: 'SimpleFacet',
+        filters: f.values.map(v => ({
+          id: v.value,
+          label: v.value,
+          totalResults: v.count,
+          selected: false,
+          modelName: 'SimpleFilter',
+          facetId: f.name,
+        })),
+      })),
+  }),
+})
+
+export const commerceAdapter = {
+  search: searchAdapter,
+  // Add more endpoints as needed
+}
+```
+
+```typescript Usage
+// src/search.ts
+import { commerceAdapter } from './adapters/commerce-adapter'
+
+async function searchProducts(query: string) {
+  const { results, totalResults, facets } = await commerceAdapter.search({
+    query,
+    rows: 24,
+    start: 0,
+  })
+  
+  console.log(`Found ${totalResults} products`)
+  console.log('Results:', results)
+  console.log('Facets:', facets)
+  
+  return { results, totalResults, facets }
+}
+
+searchProducts('laptop')
+```
+</CodeGroup>
+
+## Testing Your Adapter
+
+Create tests for your adapter:
+
+```typescript
+import { describe, it, expect, vi } from 'vitest'
+import { commerceAdapter } from './commerce-adapter'
+
+describe('Commerce Adapter', () => {
+  it('should search products', async () => {
+    const response = await commerceAdapter.search({
+      query: 'laptop',
+      rows: 10,
+    })
+    
+    expect(response.results).toBeDefined()
+    expect(response.totalResults).toBeGreaterThan(0)
+    expect(response.results[0]).toHaveProperty('id')
+    expect(response.results[0]).toHaveProperty('name')
+  })
+  
+  it('should map products correctly', async () => {
+    const response = await commerceAdapter.search({ query: 'test' })
+    const product = response.results[0]
+    
+    expect(product.modelName).toBe('Result')
+    expect(product.type).toBe('Default')
+    expect(product.price).toHaveProperty('value')
+    expect(product.price).toHaveProperty('currency')
+  })
+})
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use TypeScript for type safety">
+    Define strict types for your API requests and responses. This catches errors at compile time and provides better autocomplete.
+  </Accordion>
+  
+  <Accordion title="Reuse schemas across endpoints">
+    If multiple endpoints return similar data (e.g., products), create a shared schema and reuse it with `$extends` or `$subSchema`.
+  </Accordion>
+  
+  <Accordion title="Handle errors gracefully">
+    Add error handling in your response mappers to handle API-level errors and provide meaningful error messages.
+  </Accordion>
+  
+  <Accordion title="Test with real API responses">
+    Use actual API responses in your tests. Consider recording responses with tools like MSW or nock.
+  </Accordion>
+  
+  <Accordion title="Document your adapter">
+    Document which API endpoints are supported, required credentials, and any limitations.
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Adapter System" href="/integration/adapters" icon="plug">
+    Learn more about the adapter architecture
+  </Card>
+  
+  <Card title="Platform Adapter" href="/integration/platform-adapter" icon="cloud">
+    See the Empathy Platform adapter implementation
+  </Card>
+</CardGroup>

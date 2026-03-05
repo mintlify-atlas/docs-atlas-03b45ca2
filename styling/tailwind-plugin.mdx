@@ -1,0 +1,245 @@
+---
+title: Tailwind Plugin
+description: Install and configure the @empathyco/x-tailwindcss plugin for Interface X
+---
+
+# Tailwind Plugin
+
+The `@empathyco/x-tailwindcss` package provides a Tailwind CSS plugin that adds Interface X component styles and utilities to your project.
+
+## Installation
+
+<Steps>
+  <Step title="Install the package">
+    Install `@empathyco/x-tailwindcss` using your package manager:
+    
+    <CodeGroup>
+    ```bash npm
+    npm install @empathyco/x-tailwindcss
+    ```
+    
+    ```bash pnpm
+    pnpm add @empathyco/x-tailwindcss
+    ```
+    
+    ```bash yarn
+    yarn add @empathyco/x-tailwindcss
+    ```
+    </CodeGroup>
+  </Step>
+  
+  <Step title="Configure Tailwind">
+    Add the plugin to your `tailwind.config.ts` or `tailwind.config.js` file:
+    
+    ```typescript tailwind.config.ts
+    import xTailwindCss from '@empathyco/x-tailwindcss'
+    
+    export default {
+      content: ['./index.html', './src/**/*.{vue,js,ts,jsx,tsx}'],
+      plugins: [xTailwindCss],
+    }
+    ```
+    
+    Source: `/home/daytona/workspace/source/packages/x-tailwindcss/demo/tailwind.config.ts:1`
+  </Step>
+  
+  <Step title="Import Tailwind CSS">
+    Import Tailwind's directives in your main CSS file:
+    
+    ```css styles.css
+    @tailwind base;
+    @tailwind components;
+    @tailwind utilities;
+    ```
+  </Step>
+</Steps>
+
+## What the Plugin Provides
+
+The plugin automatically adds:
+
+### 1. Theme Configuration
+
+Access to the `x` theme namespace with all design tokens:
+
+```typescript
+theme: {
+  x: {
+    colors: { /* color palette */ },
+    spacing: { /* spacing scale */ },
+    fontSize: { /* font sizes */ },
+    borderRadius: { /* border radii */ },
+    // ... all other tokens
+  }
+}
+```
+
+You can use these tokens in your custom styles:
+
+```css
+.my-component {
+  color: theme('x.colors.lead.50');
+  padding: theme('x.spacing.16');
+  font-size: theme('x.fontSize.md');
+}
+```
+
+### 2. Component Classes
+
+Pre-styled component classes for common UI elements:
+
+<CodeGroup>
+```html Button
+<button class="x-button">Default Button</button>
+<button class="x-button x-button-outlined">Outlined</button>
+<button class="x-button x-button-ghost">Ghost</button>
+<button class="x-button x-button-link">Link</button>
+
+<!-- Sizes -->
+<button class="x-button x-button-sm">Small</button>
+<button class="x-button x-button-md">Medium</button>
+<button class="x-button x-button-lg">Large</button>
+
+<!-- Colors -->
+<button class="x-button x-button-lead">Lead</button>
+<button class="x-button x-button-accent">Accent</button>
+```
+
+```html Input
+<input class="x-input" type="text" placeholder="Search..." />
+
+<!-- Input group -->
+<div class="x-input-group">
+  <input class="x-input" type="text" />
+  <button class="x-button">Search</button>
+</div>
+```
+
+```html Badge & Tag
+<span class="x-badge">Badge</span>
+<span class="x-badge x-badge-outlined">Outlined</span>
+<span class="x-badge x-badge-bright">Bright</span>
+
+<span class="x-tag">Tag</span>
+<span class="x-tag x-tag-selected">Selected</span>
+```
+
+```html Suggestion
+<div class="x-suggestion">
+  <span class="x-suggestion__content">Search query</span>
+</div>
+
+<div class="x-suggestion-group">
+  <button class="x-suggestion-group__button">Category</button>
+  <!-- suggestions -->
+</div>
+```
+</CodeGroup>
+
+### 3. Utility Classes
+
+Additional utility classes for common patterns in search UIs.
+
+### 4. Custom Variants
+
+The `selected` variant for selected states:
+
+```html
+<button class="x-button selected:bg-blue-600">
+  Selected button
+</button>
+```
+
+This corresponds to the `.x-selected` class being present on the element.
+
+## Plugin Architecture
+
+The plugin is built using Tailwind's official plugin API:
+
+```typescript
+import plugin from 'tailwindcss/plugin'
+
+export default plugin.withOptions(
+  () => {
+    return function (helpers: TailwindHelpers) {
+      // Add component styles
+      helpers.addComponents(components(helpers), { respectPrefix: false })
+      
+      // Add dynamic components (color variants, etc.)
+      forEach(dynamicComponents(helpers), (key, { styles, values }) => {
+        helpers.matchComponents(
+          { [key]: styles },
+          { respectPrefix: false, values: values ?? undefined },
+        )
+      })
+      
+      // Add utilities
+      helpers.addUtilities(utilities(helpers), { respectPrefix: false })
+      
+      // Add custom variant
+      helpers.addVariant('selected', '&.x-selected')
+    }
+  },
+  () => {
+    return {
+      theme: { x: xTheme }
+    }
+  },
+)
+```
+
+Source: `/home/daytona/workspace/source/packages/x-tailwindcss/src/x-tailwind-plugin/plugin.ts:1`
+
+## Using Theme Helpers
+
+When creating custom component styles, use the Tailwind helpers:
+
+```typescript
+import type { TailwindHelpers } from '@empathyco/x-tailwindcss'
+
+export function myComponent(helpers: TailwindHelpers) {
+  const { theme } = helpers
+  
+  return {
+    '.my-component': {
+      color: theme('x.colors.lead.50'),
+      padding: theme('x.spacing.16'),
+      fontSize: theme('x.fontSize.md'),
+      borderRadius: theme('x.borderRadius.sm'),
+    }
+  }
+}
+```
+
+## Package Information
+
+<CardGroup cols={2}>
+  <Card title="Package" icon="box">
+    `@empathyco/x-tailwindcss`
+  </Card>
+  
+  <Card title="Version" icon="tag">
+    2.0.0-alpha.31+
+  </Card>
+  
+  <Card title="Dependencies" icon="puzzle-piece">
+    - Tailwind CSS 3.4+
+    - Node.js 22+
+  </Card>
+  
+  <Card title="Repository" icon="github">
+    [empathyco/x](https://github.com/empathyco/x/tree/main/packages/x-tailwindcss)
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Customization" href="/styling/customization" icon="palette">
+    Learn how to customize the design system
+  </Card>
+  
+  <Card title="Components" href="/components/overview" icon="puzzle-piece">
+    Explore available Vue components
+  </Card>
+</CardGroup>

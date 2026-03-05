@@ -1,0 +1,293 @@
+---
+title: '@empathyco/x-adapter'
+description: 'Utils library to create API clients with request/response mapping'
+icon: 'plug'
+---
+
+## Overview
+
+`@empathyco/x-adapter` is a utility library for creating type-safe API clients. It provides tools to connect with any API endpoint, transform requests into API-compatible formats, make HTTP requests, and transform responses back into desired shapes.
+
+## Installation
+
+<CodeGroup>
+```bash npm
+npm install @empathyco/x-adapter
+```
+
+```bash yarn
+yarn add @empathyco/x-adapter
+```
+
+```bash pnpm
+pnpm add @empathyco/x-adapter
+```
+</CodeGroup>
+
+## Main Exports
+
+### Endpoint Adapter
+
+Core functionality for creating API adapters.
+
+<ResponseField name="endpointAdapterFactory" type="function">
+  Factory function to create endpoint adapters with custom options
+</ResponseField>
+
+<ResponseField name="EndpointAdapter" type="interface">
+  Interface for adapters that connect with API endpoints
+</ResponseField>
+
+<ResponseField name="ExtendableEndpointAdapter" type="interface">
+  Endpoint adapter with extend functionality for composition
+</ResponseField>
+
+### HTTP Clients
+
+HTTP client implementations for making requests.
+
+<ResponseField name="fetchHttpClient" type="function">
+  HTTP client using the native Fetch API
+</ResponseField>
+
+<ResponseField name="HttpClient" type="interface">
+  Interface for HTTP client implementations
+</ResponseField>
+
+### Mappers
+
+Utilities for transforming requests and responses.
+
+<ResponseField name="identityMapper" type="function">
+  Pass-through mapper that returns the input unchanged
+</ResponseField>
+
+<ResponseField name="Mapper" type="interface">
+  Interface for mapper functions that transform data
+</ResponseField>
+
+### Schemas
+
+Schema validation utilities.
+
+<ResponseField name="schemaValidator" type="function">
+  Validates data against defined schemas
+</ResponseField>
+
+## Creating an Adapter
+
+### Basic Example
+
+```typescript
+import { endpointAdapterFactory } from '@empathyco/x-adapter'
+
+interface SearchRequest {
+  query: string
+  rows: number
+}
+
+interface SearchResponse {
+  results: Array<{ id: string; title: string }>
+  totalResults: number
+}
+
+const searchAdapter = endpointAdapterFactory<SearchRequest, SearchResponse>({
+  endpoint: 'https://api.example.com/search',
+  requestMapper: (request) => ({
+    q: request.query,
+    size: request.rows
+  }),
+  responseMapper: (response) => ({
+    results: response.items,
+    totalResults: response.total
+  })
+})
+
+// Use the adapter
+const response = await searchAdapter({
+  query: 'shoes',
+  rows: 20
+})
+```
+
+## Endpoint Adapter Options
+
+<ParamField path="endpoint" type="string | Mapper<Request, string>">
+  The API endpoint URL. Can be a static string or a function that generates the URL from the request
+</ParamField>
+
+<ParamField path="httpClient" type="HttpClient">
+  The HTTP client to use for requests. Defaults to `fetchHttpClient`
+</ParamField>
+
+<ParamField path="defaultRequestOptions" type="RequestOptions">
+  Default options applied to every request (headers, method, etc.)
+</ParamField>
+
+<ParamField path="requestMapper" type="Mapper<Request, Record<string, any>>">
+  Function to transform the request object before sending to the API
+</ParamField>
+
+<ParamField path="responseMapper" type="Mapper<any, Response>">
+  Function to transform the API response into the desired format
+</ParamField>
+
+## Advanced Usage
+
+### Dynamic Endpoints
+
+```typescript
+const productAdapter = endpointAdapterFactory({
+  endpoint: (request) => `https://api.example.com/products/${request.productId}`,
+  responseMapper: (response) => ({
+    ...response,
+    price: parseFloat(response.price)
+  })
+})
+```
+
+### Extending Adapters
+
+```typescript
+const baseAdapter = endpointAdapterFactory({
+  endpoint: 'https://api.example.com',
+  defaultRequestOptions: {
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  }
+})
+
+// Extend with authentication
+const authenticatedAdapter = baseAdapter.extends({
+  defaultRequestOptions: {
+    headers: {
+      'Authorization': 'Bearer token123'
+    }
+  }
+})
+```
+
+### Custom Request Mapper
+
+```typescript
+const searchAdapter = endpointAdapterFactory({
+  endpoint: '/api/search',
+  requestMapper: (request) => {
+    const params: Record<string, any> = {
+      q: request.query
+    }
+    
+    if (request.filters) {
+      params.filters = request.filters.map(f => f.id).join(',')
+    }
+    
+    if (request.sort) {
+      params.sort = request.sort
+    }
+    
+    return params
+  }
+})
+```
+
+### Response Transformation
+
+```typescript
+const facetsAdapter = endpointAdapterFactory({
+  endpoint: '/api/facets',
+  responseMapper: (response) => ({
+    facets: response.facets.map(facet => ({
+      id: facet.facet_id,
+      label: facet.facet_name,
+      filters: facet.values.map(value => ({
+        id: value.value_id,
+        label: value.value_name,
+        totalResults: value.count,
+        selected: false
+      }))
+    }))
+  })
+})
+```
+
+## Type Definitions
+
+### EndpointAdapter
+
+```typescript
+interface EndpointAdapter<Request, Response> {
+  (request: Request, options?: RequestOptions): Promise<Response>
+}
+```
+
+### ExtendableEndpointAdapter
+
+```typescript
+interface ExtendableEndpointAdapter<Request, Response>
+  extends EndpointAdapter<Request, Response> {
+  extends: <NewRequest = Request, NewResponse = Response>(
+    options: Partial<EndpointAdapterOptions<NewRequest, NewResponse>>
+  ) => ExtendableEndpointAdapter<NewRequest, NewResponse>
+}
+```
+
+### Mapper
+
+```typescript
+type Mapper<Input, Output> = (
+  input: Input,
+  context?: Record<string, any>
+) => Output
+```
+
+### RequestOptions
+
+```typescript
+interface RequestOptions {
+  endpoint?: string
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
+  headers?: Record<string, string>
+  parameters?: Record<string, any>
+}
+```
+
+## Error Handling
+
+```typescript
+try {
+  const response = await searchAdapter({
+    query: 'shoes',
+    rows: 20
+  })
+} catch (error) {
+  if (error.message === 'Tried to make a request without an endpoint') {
+    // Handle missing endpoint
+  }
+  // Handle other errors
+}
+```
+
+## Dependencies
+
+The package depends on:
+
+- `@empathyco/x-deep-merge` - Deep merging utilities
+- `@empathyco/x-utils` - General utility functions
+
+## Related Packages
+
+- [@empathyco/x-components](/api/x-components) - Main component library
+- [@empathyco/x-types](/api/x-types) - Type definitions
+- [@empathyco/x-utils](/api/x-utils) - Utility functions
+
+## Resources
+
+<CardGroup cols={2}>
+  <Card title="GitHub Repository" icon="github" href="https://github.com/empathyco/x">
+    View source code
+  </Card>
+  <Card title="x-components" icon="cube" href="/api/x-components">
+    See how adapters integrate with components
+  </Card>
+</CardGroup>

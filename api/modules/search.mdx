@@ -1,0 +1,436 @@
+---
+title: 'Search Module'
+description: 'Core search functionality with results, facets, and pagination'
+icon: 'magnifying-glass'
+---
+
+## Overview
+
+The Search module is the core of Interface X, handling search queries, results display, facets, pagination, banners, promotions, and spellcheck suggestions. It manages the complete search experience state and coordinates with the API adapter.
+
+## State
+
+The Search module maintains the following state:
+
+<ResponseField name="query" type="string">
+  Current search query string
+</ResponseField>
+
+<ResponseField name="results" type="Result[]">
+  Array of search result items
+</ResponseField>
+
+<ResponseField name="partialResults" type="PartialResult[]">
+  Partial results shown before full results load
+</ResponseField>
+
+<ResponseField name="facets" type="Facet[]">
+  Available facets for filtering results
+</ResponseField>
+
+<ResponseField name="selectedFilters" type="Record<string, Filter[]>">
+  Currently selected filters grouped by facet ID
+</ResponseField>
+
+<ResponseField name="relatedTags" type="RelatedTag[]">
+  Related tags for query refinement
+</ResponseField>
+
+<ResponseField name="banners" type="Banner[]">
+  Promotional banners to display with results
+</ResponseField>
+
+<ResponseField name="promoteds" type="Result[]">
+  Promoted results with special positioning
+</ResponseField>
+
+<ResponseField name="totalResults" type="number">
+  Total number of results matching the query
+</ResponseField>
+
+<ResponseField name="spellcheckedQuery" type="string">
+  Suggested query correction if applicable
+</ResponseField>
+
+<ResponseField name="sort" type="string">
+  Current sort criteria
+</ResponseField>
+
+<ResponseField name="page" type="number">
+  Current page number (starts at 1)
+</ResponseField>
+
+<ResponseField name="isAppendResults" type="boolean">
+  Whether to append results (infinite scroll) or replace
+</ResponseField>
+
+<ResponseField name="isNoResults" type="boolean">
+  Flag indicating zero results state
+</ResponseField>
+
+<ResponseField name="fromNoResultsWithFilters" type="boolean">
+  Whether current results came from removing filters on no-results
+</ResponseField>
+
+<ResponseField name="status" type="'initial' | 'loading' | 'success' | 'error'">
+  Current request status
+</ResponseField>
+
+<ResponseField name="params" type="Record<string, unknown>">
+  Additional request parameters
+</ResponseField>
+
+<ResponseField name="origin" type="string | null">
+  Origin of the search request for tracking
+</ResponseField>
+
+<ResponseField name="redirections" type="Redirection[]">
+  URL redirections for specific queries
+</ResponseField>
+
+<ResponseField name="queryTagging" type="TaggingInfo">
+  Tagging information for query tracking
+</ResponseField>
+
+<ResponseField name="displayTagging" type="TaggingInfo">
+  Tagging information for display events
+</ResponseField>
+
+<ResponseField name="stats" type="Stats">
+  Performance statistics for the search request
+</ResponseField>
+
+<ResponseField name="config" type="SearchConfig">
+  Module configuration options
+</ResponseField>
+
+## Configuration
+
+<ParamField path="pageSize" type="number" default="24">
+  Number of results per page
+</ParamField>
+
+<ParamField path="pageMode" type="'infinite_scroll' | 'pagination'" default="'infinite_scroll'">
+  How to handle multiple pages of results
+</ParamField>
+
+## Getters
+
+<ResponseField name="request" type="SearchRequest">
+  Computed search request object built from current state
+</ResponseField>
+
+<ResponseField name="query" type="string">
+  Current query string (passes through state)
+</ResponseField>
+
+## Mutations
+
+<ResponseField name="setQuery" type="(state, query: string) => void">
+  Update the search query
+</ResponseField>
+
+<ResponseField name="setResults" type="(state, results: Result[]) => void">
+  Replace all results
+</ResponseField>
+
+<ResponseField name="appendResults" type="(state, results: Result[]) => void">
+  Add results to the end (for pagination/infinite scroll)
+</ResponseField>
+
+<ResponseField name="setPartialResults" type="(state, partialResults: PartialResult[]) => void">
+  Set partial results shown during loading
+</ResponseField>
+
+<ResponseField name="setFacets" type="(state, facets: Facet[]) => void">
+  Update available facets
+</ResponseField>
+
+<ResponseField name="setSelectedFilters" type="(state, filters: Filter[]) => void">
+  Update selected filters
+</ResponseField>
+
+<ResponseField name="setRelatedTags" type="(state, tags: RelatedTag[]) => void">
+  Update related tags
+</ResponseField>
+
+<ResponseField name="setBanners" type="(state, banners: Banner[]) => void">
+  Update promotional banners
+</ResponseField>
+
+<ResponseField name="setPromoteds" type="(state, promoteds: Result[]) => void">
+  Update promoted results
+</ResponseField>
+
+<ResponseField name="setSpellcheck" type="(state, query: string) => void">
+  Set spellcheck suggestion
+</ResponseField>
+
+<ResponseField name="setTotalResults" type="(state, total: number) => void">
+  Update total results count
+</ResponseField>
+
+<ResponseField name="setSort" type="(state, sort: string) => void">
+  Update sort criteria
+</ResponseField>
+
+<ResponseField name="setPage" type="(state, page: number) => void">
+  Update current page number
+</ResponseField>
+
+<ResponseField name="setIsAppendResults" type="(state, append: boolean) => void">
+  Set whether to append or replace results
+</ResponseField>
+
+<ResponseField name="setIsNoResults" type="(state, isNoResults: boolean) => void">
+  Set no results flag
+</ResponseField>
+
+<ResponseField name="setStatus" type="(state, status: Status) => void">
+  Update request status
+</ResponseField>
+
+<ResponseField name="updateResult" type="(state, result: Result) => void">
+  Update a specific result in the results array
+</ResponseField>
+
+<ResponseField name="resetState" type="(state) => void">
+  Reset all state to initial values
+</ResponseField>
+
+<ResponseField name="resetStateForReload" type="(state) => void">
+  Reset state except query, facets, sort, and page
+</ResponseField>
+
+## Actions
+
+<ResponseField name="fetchSearchResponse" type="(context, request?: SearchRequest) => Promise<SearchResponse>">
+  Fetch search results from the API without updating state
+</ResponseField>
+
+<ResponseField name="fetchAndSaveSearchResponse" type="(context, request?: SearchRequest) => Promise<SearchResponse>">
+  Fetch search results and update module state
+</ResponseField>
+
+<ResponseField name="cancelFetchAndSaveSearchResponse" type="(context) => Promise<void>">
+  Cancel any in-progress search request
+</ResponseField>
+
+<ResponseField name="increasePageAppendingResults" type="(context) => Promise<void>">
+  Load next page of results and append them
+</ResponseField>
+
+<ResponseField name="resetRequestOnRefinement" type="(context) => void">
+  Reset page and append mode when filters change
+</ResponseField>
+
+<ResponseField name="saveSearchResponse" type="(context, response: SearchResponse) => void">
+  Save a search response to state without fetching
+</ResponseField>
+
+<ResponseField name="setUrlParams" type="(context, params: Record<string, unknown>) => void">
+  Update search parameters from URL
+</ResponseField>
+
+<ResponseField name="saveOrigin" type="(context, origin: string) => void">
+  Save the origin of the search request
+</ResponseField>
+
+## Events Emitted
+
+<ResponseField name="UserAcceptedAQuery" type="{ query: string }">
+  Emitted when user submits a search query
+</ResponseField>
+
+<ResponseField name="UserClickedAResult" type="{ result: Result }">
+  Emitted when user clicks a search result
+</ResponseField>
+
+<ResponseField name="UserReachedResultsListEnd" type="{}">
+  Emitted when user scrolls to the end of results
+</ResponseField>
+
+<ResponseField name="SearchResponseChanged" type="{ response: SearchResponse }">
+  Emitted when search results are updated
+</ResponseField>
+
+<ResponseField name="SearchRequestChanged" type="{ request: SearchRequest }">
+  Emitted when search request parameters change
+</ResponseField>
+
+## Usage Examples
+
+### Basic Search
+
+```typescript
+import { useStore } from 'vuex'
+import { XEvent } from '@empathyco/x-components'
+
+const store = useStore()
+
+// Set query
+store.commit('x/search/setQuery', 'shoes')
+
+// Fetch results
+await store.dispatch('x/search/fetchAndSaveSearchResponse')
+
+// Access results
+const results = store.state.x.search.results
+const totalResults = store.state.x.search.totalResults
+```
+
+### Pagination
+
+```typescript
+// Configure pagination mode
+store.commit('x/search/setConfig', {
+  pageMode: 'pagination',
+  pageSize: 20
+})
+
+// Go to page 2
+store.commit('x/search/setPage', 2)
+await store.dispatch('x/search/fetchAndSaveSearchResponse')
+```
+
+### Infinite Scroll
+
+```typescript
+// Configure infinite scroll
+store.commit('x/search/setConfig', {
+  pageMode: 'infinite_scroll',
+  pageSize: 24
+})
+
+// Load more results
+await store.dispatch('x/search/increasePageAppendingResults')
+```
+
+### Filtering
+
+```typescript
+import type { Filter } from '@empathyco/x-types'
+
+// Select a filter
+const filter: Filter = {
+  id: 'category:electronics',
+  facetId: 'category',
+  label: 'Electronics',
+  modelName: 'SimpleFilter',
+  selected: true,
+  totalResults: 42
+}
+
+store.commit('x/search/setSelectedFilters', [filter])
+await store.dispatch('x/search/fetchAndSaveSearchResponse')
+```
+
+### Sorting
+
+```typescript
+// Change sort order
+store.commit('x/search/setSort', 'price:asc')
+await store.dispatch('x/search/fetchAndSaveSearchResponse')
+```
+
+### Spellcheck
+
+```typescript
+const spellcheck = store.state.x.search.spellcheckedQuery
+
+if (spellcheck) {
+  // Show "Did you mean: {spellcheck}?"
+  store.commit('x/search/setQuery', spellcheck)
+  await store.dispatch('x/search/fetchAndSaveSearchResponse')
+}
+```
+
+### Component Integration
+
+```vue
+<template>
+  <div class="search-interface">
+    <div v-if="isLoading">Loading...</div>
+    
+    <div v-else-if="isNoResults">
+      <p>No results found for "{{ query }}"</p>
+      <p v-if="spellcheck">
+        Did you mean: 
+        <button @click="acceptSpellcheck">{{ spellcheck }}</button>?
+      </p>
+    </div>
+    
+    <div v-else>
+      <div v-for="result in results" :key="result.id">
+        <ResultCard :result="result" @click="onResultClick(result)" />
+      </div>
+      
+      <button 
+        v-if="hasMoreResults" 
+        @click="loadMore"
+      >
+        Load More
+      </button>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed } from 'vue'
+import { useStore } from 'vuex'
+import type { Result } from '@empathyco/x-types'
+import ResultCard from './ResultCard.vue'
+
+const store = useStore()
+
+const query = computed(() => store.state.x.search.query)
+const results = computed(() => store.state.x.search.results)
+const totalResults = computed(() => store.state.x.search.totalResults)
+const spellcheck = computed(() => store.state.x.search.spellcheckedQuery)
+const isLoading = computed(() => store.state.x.search.status === 'loading')
+const isNoResults = computed(() => store.state.x.search.isNoResults)
+
+const hasMoreResults = computed(() => {
+  return results.value.length < totalResults.value
+})
+
+const loadMore = async () => {
+  await store.dispatch('x/search/increasePageAppendingResults')
+}
+
+const acceptSpellcheck = async () => {
+  store.commit('x/search/setQuery', spellcheck.value)
+  await store.dispatch('x/search/fetchAndSaveSearchResponse')
+}
+
+const onResultClick = (result: Result) => {
+  // Emit tracking event
+  store.dispatch('x/tagging/track', {
+    event: 'UserClickedAResult',
+    result
+  })
+}
+</script>
+```
+
+## Related Modules
+
+- [Facets Module](/api/modules/facets) - Filter management
+- [History Queries Module](/api/modules/history-queries) - Search history
+- [Tagging Module](/api/modules/tagging) - Analytics tracking
+- [URL Module](/api/modules/url) - URL synchronization
+
+## Type Reference
+
+Source: `/home/daytona/workspace/source/packages/x-components/src/x-modules/search/store/module.ts:1`
+
+## Resources
+
+<CardGroup cols={2}>
+  <Card title="x-components" icon="cube" href="/api/x-components">
+    Main component library
+  </Card>
+  <Card title="x-types" icon="brackets-curly" href="/api/x-types">
+    Type definitions
+  </Card>
+</CardGroup>

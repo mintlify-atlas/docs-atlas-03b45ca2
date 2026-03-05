@@ -1,0 +1,393 @@
+---
+title: Base Components
+description: Foundational UI components for building search and discovery interfaces
+---
+
+Base components are the building blocks of Interface X, providing essential UI patterns like grids, ratings, sliders, switches, and dropdowns. These components are framework-agnostic and highly customizable.
+
+## BaseGrid
+
+A flexible grid component that renders items in a responsive grid layout with support for different item types and animations.
+
+### Props
+
+<ParamField path="items" type="ListItem[]">
+  The list of items to be rendered. Items must have an `id` property.
+</ParamField>
+
+<ParamField path="columns" type="number" default="0">
+  Number of columns the grid is divided into. When set to 0, uses auto-fill mode.
+</ParamField>
+
+<ParamField path="animation" type="Component" default="'ul'">
+  Animation component to use for animating the grid.
+</ParamField>
+
+### Slots
+
+<ParamField path="default" type="slot">
+  Default item rendering. Receives `item` as slot prop.
+</ParamField>
+
+<ParamField path="[modelName]" type="slot">
+  Named slots for specific item types based on their `modelName` property. Receives `item` as slot prop.
+</ParamField>
+
+### Usage
+
+```vue
+<template>
+  <BaseGrid :items="items" :columns="4">
+    <template #default="{ item }">
+      {{ item.name }}
+    </template>
+  </BaseGrid>
+</template>
+
+<script setup>
+import { BaseGrid } from '@empathyco/x-components'
+
+const items = [
+  { id: 1, name: 'Item 1' },
+  { id: 2, name: 'Item 2' },
+  { id: 3, name: 'Item 3' },
+]
+</script>
+```
+
+### Different slots for different items
+
+```vue
+<template>
+  <BaseGrid :items="items">
+    <template #banner="{ item }">
+      <div class="banner">{{ item.title }}</div>
+    </template>
+    <template #result="{ item }">
+      <div class="result">{{ item.name }}</div>
+    </template>
+  </BaseGrid>
+</template>
+
+<script setup>
+import { BaseGrid } from '@empathyco/x-components'
+
+const items = [
+  { id: 1, modelName: 'banner', title: 'Special Offer' },
+  { id: 2, modelName: 'result', name: 'Product 1' },
+  { id: 3, modelName: 'result', name: 'Product 2' },
+]
+</script>
+```
+
+### Customizing grid item width
+
+Use the `--x-size-min-width-grid-item` CSS variable:
+
+```vue
+<BaseGrid :items="items" style="--x-size-min-width-grid-item: 200px">
+  <template #default="{ item }">{{ item.name }}</template>
+</BaseGrid>
+```
+
+## BaseRating
+
+Displays a rating with filled and empty icons based on a numeric value.
+
+### Props
+
+<ParamField path="value" type="number" required>
+  Numeric value used to calculate the filled portion (e.g., 4.5 out of 5).
+</ParamField>
+
+<ParamField path="max" type="number" default="5">
+  Maximum number of rating elements to display.
+</ParamField>
+
+### Slots
+
+<ParamField path="filled-icon" type="slot">
+  Content to render as filled icons. Default is a star icon.
+</ParamField>
+
+<ParamField path="empty-icon" type="slot">
+  Content to render as empty icons. Default is a star outline.
+</ParamField>
+
+### Usage
+
+```vue
+<template>
+  <BaseRating :value="4.5" :max="5" />
+</template>
+
+<script setup>
+import { BaseRating } from '@empathyco/x-components'
+</script>
+```
+
+### Custom icons
+
+```vue
+<template>
+  <BaseRating :value="7.5" :max="10">
+    <template #filled-icon>
+      <StarIcon class="star-filled" />
+    </template>
+    <template #empty-icon>
+      <StarIcon class="star-empty" />
+    </template>
+  </BaseRating>
+</template>
+
+<script setup>
+import { BaseRating } from '@empathyco/x-components'
+import StarIcon from './StarIcon.vue'
+</script>
+```
+
+## BaseSlider
+
+A range slider component built on nouislider for selecting min/max numeric ranges.
+
+### Props
+
+<ParamField path="modelValue" type="{ min: number, max: number }" required>
+  The selected range values. Use with `v-model`.
+</ParamField>
+
+<ParamField path="threshold" type="{ min: number, max: number }" default="{ min: 0, max: Number.MAX_SAFE_INTEGER }">
+  The minimum and maximum limits for the slider.
+</ParamField>
+
+<ParamField path="contentClass" type="string" default="''">
+  CSS class to customize slider styles.
+</ParamField>
+
+### Events
+
+<ParamField path="update:modelValue" type="{ min: number, max: number }">
+  Emitted when the slider values change.
+</ParamField>
+
+### Slots
+
+<ParamField path="default" type="slot">
+  Custom rendering for selected range display. Receives `rangeSelected` array as slot prop.
+</ParamField>
+
+### Usage
+
+```vue
+<template>
+  <BaseSlider v-model="selectedRange" :threshold="{ min: 0, max: 1000 }" />
+</template>
+
+<script setup>
+import { ref } from 'vue'
+import { BaseSlider } from '@empathyco/x-components'
+
+const selectedRange = ref({ min: 100, max: 800 })
+</script>
+```
+
+### With custom display
+
+```vue
+<template>
+  <BaseSlider v-model="selectedRange" :threshold="threshold" v-slot="{ rangeSelected }">
+    <div>
+      <label>Min: <input v-model.number="selectedRange.min" type="number" /></label>
+      <label>Max: <input v-model.number="selectedRange.max" type="number" /></label>
+    </div>
+  </BaseSlider>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+import { BaseSlider } from '@empathyco/x-components'
+
+const threshold = { min: 0, max: 1000 }
+const selectedRange = ref({ ...threshold })
+</script>
+```
+
+## BaseSwitch
+
+A toggle switch component for boolean values.
+
+### Props
+
+<ParamField path="modelValue" type="boolean" default="false">
+  The selected state of the switch. Use with `v-model`.
+</ParamField>
+
+### Events
+
+<ParamField path="update:modelValue" type="boolean">
+  Emitted when the switch is toggled.
+</ParamField>
+
+### Usage
+
+```vue
+<template>
+  <BaseSwitch v-model="isEnabled" />
+</template>
+
+<script setup>
+import { ref } from 'vue'
+import { BaseSwitch } from '@empathyco/x-components'
+
+const isEnabled = ref(false)
+</script>
+```
+
+### Styling
+
+Customize using CSS variables:
+
+```css
+.x-switch {
+  --x-switch-height: 20px;
+  --x-switch-background: #your-color;
+}
+```
+
+## BaseDropdown
+
+A customizable dropdown/select component with keyboard navigation and search.
+
+### Props
+
+<ParamField path="items" type="Array<string | number | Identifiable>" required>
+  List of items to display in the dropdown.
+</ParamField>
+
+<ParamField path="modelValue" type="string | number | Identifiable | null" required>
+  The selected item. Use with `v-model`.
+</ParamField>
+
+<ParamField path="ariaLabel" type="string">
+  Description of what the dropdown is used for (accessibility).
+</ParamField>
+
+<ParamField path="animation" type="Component" default="NoAnimation">
+  Animation component for expanding the dropdown.
+</ParamField>
+
+<ParamField path="searchTimeoutMs" type="number" default="1000">
+  Time to wait before resetting the search query.
+</ParamField>
+
+### Events
+
+<ParamField path="update:modelValue" type="string | number | Identifiable">
+  Emitted when an item is selected.
+</ParamField>
+
+### Slots
+
+<ParamField path="item" type="slot" required>
+  Renders each item and the toggle button (if no toggle slot provided). Receives `item`, `isSelected`, and `isHighlighted` as slot props.
+</ParamField>
+
+<ParamField path="toggle" type="slot">
+  Customizes the toggle button content. Receives `item` and `isOpen` as slot props.
+</ParamField>
+
+### Usage
+
+```vue
+<template>
+  <BaseDropdown v-model="selected" :items="items" ariaLabel="Select a size">
+    <template #item="{ item, isSelected, isHighlighted }">
+      <span v-if="isHighlighted">➤</span>
+      <span v-if="isSelected">✓</span>
+      {{ item }}
+    </template>
+  </BaseDropdown>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+import { BaseDropdown } from '@empathyco/x-components'
+
+const items = ['Small', 'Medium', 'Large', 'X-Large']
+const selected = ref('Medium')
+</script>
+```
+
+### Custom toggle button
+
+```vue
+<template>
+  <BaseDropdown v-model="selected" :items="items">
+    <template #toggle="{ item, isOpen }">
+      <span>{{ item }}</span>
+      <span>{{ isOpen ? '▲' : '▼' }}</span>
+    </template>
+    <template #item="{ item }">
+      {{ item }}
+    </template>
+  </BaseDropdown>
+</template>
+```
+
+## BaseVariableColumnGrid
+
+A wrapper around BaseGrid that listens to column picker events and dynamically adjusts the number of columns.
+
+### Props
+
+<ParamField path="items" type="ListItem[]">
+  The list of items to render. Items must have an `id` property.
+</ParamField>
+
+<ParamField path="columns" type="number" default="0">
+  Default number of columns before any user selection.
+</ParamField>
+
+<ParamField path="animation" type="Component" default="'ul'">
+  Animation component for the grid.
+</ParamField>
+
+### Usage
+
+```vue
+<template>
+  <div>
+    <button @click="setColumns(3)">3 Columns</button>
+    <button @click="setColumns(4)">4 Columns</button>
+    <button @click="setColumns(6)">6 Columns</button>
+    
+    <BaseVariableColumnGrid :items="items" :columns="4">
+      <template #default="{ item }">
+        {{ item.name }}
+      </template>
+    </BaseVariableColumnGrid>
+  </div>
+</template>
+
+<script setup>
+import { BaseVariableColumnGrid } from '@empathyco/x-components'
+import { use$x } from '@empathyco/x-components'
+
+const x = use$x()
+const items = [
+  { id: 1, name: 'Product 1' },
+  { id: 2, name: 'Product 2' },
+]
+
+function setColumns(cols) {
+  x.emit('UserClickedColumnPicker', cols)
+}
+</script>
+```
+
+## Best Practices
+
+- **Accessibility**: Always provide appropriate ARIA labels for dropdowns and interactive components
+- **Performance**: Use the `columns` prop on grids when you have a fixed layout to avoid recalculations
+- **Responsive Design**: Leverage CSS variables to customize component dimensions
+- **Animations**: Choose appropriate animations for your use case - simpler animations perform better

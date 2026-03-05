@@ -1,0 +1,563 @@
+---
+title: Modals and Panels
+description: Components for overlays, dialogs, and collapsible panels
+---
+
+Interface X provides a comprehensive set of modal and panel components for creating dialogs, overlays, and collapsible content sections.
+
+## BaseModal
+
+A foundational modal component with overlay, focus management, and animations.
+
+### Props
+
+<ParamField path="open" type="boolean" required>
+  Controls whether the modal is visible.
+</ParamField>
+
+<ParamField path="focusOnOpen" type="boolean" default="true">
+  Whether to focus the first focusable element when the modal opens.
+</ParamField>
+
+<ParamField path="referenceSelector" type="string">
+  CSS selector for positioning the modal relative to an element (e.g., `.header`).
+</ParamField>
+
+<ParamField path="animation" type="Component" default="NoAnimation">
+  Animation component for the modal content.
+</ParamField>
+
+<ParamField path="overlayAnimation" type="Component" default="Fade">
+  Animation component for the modal overlay/backdrop.
+</ParamField>
+
+<ParamField path="contentClass" type="string">
+  CSS class to apply to the modal content element.
+</ParamField>
+
+<ParamField path="overlayClass" type="string">
+  CSS class to apply to the modal overlay element.
+</ParamField>
+
+### Events
+
+<ParamField path="click:overlay" type="MouseEvent">
+  Emitted when the overlay (backdrop) is clicked.
+</ParamField>
+
+<ParamField path="focusin:body" type="FocusEvent">
+  Emitted when focus moves outside the modal.
+</ParamField>
+
+### Usage
+
+```vue
+<template>
+  <div>
+    <button @click="isOpen = true">Open Modal</button>
+    
+    <BaseModal
+      :open="isOpen"
+      :animation="FadeAndSlide"
+      @click:overlay="isOpen = false"
+    >
+      <div class="modal-header">
+        <h2>Modal Title</h2>
+        <button @click="isOpen = false">✕</button>
+      </div>
+      <div class="modal-body">
+        <p>Modal content goes here</p>
+      </div>
+      <div class="modal-footer">
+        <button @click="isOpen = false">Close</button>
+      </div>
+    </BaseModal>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+import { BaseModal, FadeAndSlide } from '@empathyco/x-components'
+
+const isOpen = ref(false)
+</script>
+```
+
+### Positioned modal
+
+Position the modal below a specific element:
+
+```vue
+<template>
+  <header class="site-header">
+    <button @click="isOpen = true">Search</button>
+  </header>
+  
+  <BaseModal
+    :open="isOpen"
+    referenceSelector=".site-header"
+    @click:overlay="isOpen = false"
+  >
+    <SearchBox />
+  </BaseModal>
+</template>
+```
+
+### Custom styling
+
+```vue
+<template>
+  <BaseModal
+    :open="isOpen"
+    contentClass="rounded-lg shadow-xl"
+    overlayClass="bg-black bg-opacity-75"
+  >
+    <!-- Content -->
+  </BaseModal>
+</template>
+```
+
+## BaseIdModal
+
+A modal that responds to X Component events with a unique ID for opening and closing.
+
+### Props
+
+<ParamField path="modalId" type="string" required>
+  Unique identifier for this modal. Must match the ID used in open/close buttons.
+</ParamField>
+
+<ParamField path="animation" type="Component">
+  Animation component for the modal.
+</ParamField>
+
+### Events
+
+Listens to:
+- `UserClickedOpenModal` - Opens when payload matches `modalId`
+- `UserClickedCloseModal` - Closes when payload matches `modalId`
+- `UserClickedOutOfModal` - Closes when payload matches `modalId`
+
+Emits:
+- `UserClickedOutOfModal` - When overlay or outside area is clicked
+
+### Usage
+
+```vue
+<template>
+  <div>
+    <BaseIdModalOpen modalId="product-details">
+      View Details
+    </BaseIdModalOpen>
+    
+    <BaseIdModal modalId="product-details" :animation="FadeAndSlide">
+      <div class="product-details">
+        <h2>Product Details</h2>
+        <p>Detailed information...</p>
+        <BaseIdModalClose modalId="product-details">
+          Close
+        </BaseIdModalClose>
+      </div>
+    </BaseIdModal>
+  </div>
+</template>
+
+<script setup>
+import {
+  BaseIdModal,
+  BaseIdModalOpen,
+  BaseIdModalClose,
+  FadeAndSlide
+} from '@empathyco/x-components'
+</script>
+```
+
+### Multiple modals
+
+```vue
+<template>
+  <div>
+    <BaseIdModalOpen modalId="filters">Filters</BaseIdModalOpen>
+    <BaseIdModalOpen modalId="sort">Sort</BaseIdModalOpen>
+    
+    <BaseIdModal modalId="filters">
+      <FiltersList />
+      <BaseIdModalClose modalId="filters">Close</BaseIdModalClose>
+    </BaseIdModal>
+    
+    <BaseIdModal modalId="sort">
+      <SortOptions />
+      <BaseIdModalClose modalId="sort">Close</BaseIdModalClose>
+    </BaseIdModal>
+  </div>
+</template>
+```
+
+## BaseTogglePanel
+
+A simple collapsible panel controlled by a boolean prop.
+
+### Props
+
+<ParamField path="open" type="boolean" required>
+  Whether the panel is visible.
+</ParamField>
+
+<ParamField path="animation" type="Component" default="'div'">
+  Animation component for panel transitions.
+</ParamField>
+
+### Usage
+
+```vue
+<template>
+  <div>
+    <button @click="isOpen = !isOpen">
+      {{ isOpen ? 'Hide' : 'Show' }} Filters
+    </button>
+    
+    <BaseTogglePanel :open="isOpen" :animation="CollapseHeight">
+      <div class="filters">
+        <FiltersList />
+      </div>
+    </BaseTogglePanel>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+import { BaseTogglePanel, CollapseHeight } from '@empathyco/x-components'
+
+const isOpen = ref(true)
+</script>
+```
+
+## BaseIdTogglePanel
+
+A panel that responds to X Component events for opening and closing.
+
+### Props
+
+<ParamField path="panelId" type="string" required>
+  Unique identifier for this panel. Must match the ID used in toggle buttons.
+</ParamField>
+
+<ParamField path="startOpen" type="boolean" default="true">
+  Initial open state of the panel.
+</ParamField>
+
+<ParamField path="animation" type="Component" default="NoAnimation">
+  Animation component for the panel.
+</ParamField>
+
+### Events
+
+Listens to:
+- `UserClickedPanelToggleButton` - Toggles when payload matches `panelId`
+
+Emits:
+- `TogglePanelStateChanged` - When panel state changes
+
+### Usage
+
+```vue
+<template>
+  <div>
+    <BaseIdTogglePanelButton panelId="advanced-filters">
+      <span>Advanced Filters</span>
+      <ChevronIcon />
+    </BaseIdTogglePanelButton>
+    
+    <BaseIdTogglePanel
+      panelId="advanced-filters"
+      :startOpen="false"
+      :animation="CollapseHeight"
+    >
+      <div class="advanced-filters">
+        <!-- Filter content -->
+      </div>
+    </BaseIdTogglePanel>
+  </div>
+</template>
+
+<script setup>
+import {
+  BaseIdTogglePanel,
+  BaseIdTogglePanelButton,
+  CollapseHeight
+} from '@empathyco/x-components'
+</script>
+```
+
+### Listening to state changes
+
+```vue
+<script setup>
+import { ref } from 'vue'
+import { use$x } from '@empathyco/x-components'
+
+const x = use$x()
+const isPanelOpen = ref(false)
+
+x.on('TogglePanelStateChanged').subscribe((isOpen, { id }) => {
+  if (id === 'my-panel') {
+    isPanelOpen.value = isOpen
+  }
+})
+</script>
+```
+
+## BaseTabsPanel
+
+A tabs component that renders panels based on slot names.
+
+### Props
+
+<ParamField path="initialTab" type="string" default="''">
+  The tab to be selected initially.
+</ParamField>
+
+<ParamField path="allowTabDeselect" type="boolean" default="false">
+  Whether clicking an active tab should deselect it.
+</ParamField>
+
+<ParamField path="tabsAnimation" type="Component" default="'header'">
+  Animation component for the tabs list.
+</ParamField>
+
+<ParamField path="contentAnimation" type="Component" default="NoAnimation">
+  Animation component for the tab content.
+</ParamField>
+
+<ParamField path="activeTabClass" type="string">
+  CSS class for the active tab button.
+</ParamField>
+
+<ParamField path="tabClass" type="string">
+  CSS class for tab buttons.
+</ParamField>
+
+<ParamField path="tabsListClass" type="string">
+  CSS class for the tabs list container.
+</ParamField>
+
+<ParamField path="contentClass" type="string">
+  CSS class for the tab content container.
+</ParamField>
+
+### Slots
+
+<ParamField path="tab" type="slot">
+  Replace the entire tab button. Receives `tab`, `isSelected`, and `select` function.
+</ParamField>
+
+<ParamField path="tab-content" type="slot">
+  Customize just the tab button content. Receives `tab` and `isSelected`.
+</ParamField>
+
+<ParamField path="[tabName]" type="slot">
+  Content for each tab panel. Tab names are derived from slot names.
+</ParamField>
+
+### Usage
+
+```vue
+<template>
+  <BaseTabsPanel initialTab="overview">
+    <template #overview>
+      <div class="overview">
+        <h3>Overview</h3>
+        <p>Product overview content...</p>
+      </div>
+    </template>
+    
+    <template #specifications>
+      <div class="specs">
+        <h3>Specifications</h3>
+        <ul>
+          <li>Size: Large</li>
+          <li>Color: Blue</li>
+        </ul>
+      </div>
+    </template>
+    
+    <template #reviews>
+      <div class="reviews">
+        <h3>Reviews</h3>
+        <ReviewsList />
+      </div>
+    </template>
+  </BaseTabsPanel>
+</template>
+
+<script setup>
+import { BaseTabsPanel } from '@empathyco/x-components'
+</script>
+```
+
+### Custom tab buttons
+
+```vue
+<template>
+  <BaseTabsPanel
+    activeTabClass="tab-active"
+    tabClass="tab-default"
+  >
+    <template #tab-content="{ tab, isSelected }">
+      <CheckIcon v-if="isSelected" />
+      <span>{{ tab }}</span>
+    </template>
+    
+    <template #products>
+      <ProductsList />
+    </template>
+    
+    <template #categories>
+      <CategoriesList />
+    </template>
+  </BaseTabsPanel>
+</template>
+```
+
+### With animations
+
+```vue
+<template>
+  <BaseTabsPanel
+    :contentAnimation="FadeAndSlide"
+    initialTab="popular"
+  >
+    <template #popular>
+      <PopularProducts />
+    </template>
+    
+    <template #recent>
+      <RecentProducts />
+    </template>
+    
+    <template #sale>
+      <SaleProducts />
+    </template>
+  </BaseTabsPanel>
+</template>
+
+<script setup>
+import { BaseTabsPanel, FadeAndSlide } from '@empathyco/x-components'
+</script>
+```
+
+### Programmatic control
+
+```vue
+<template>
+  <BaseTabsPanel>
+    <template #products="{ selectTab }">
+      <div>
+        <h3>Products</h3>
+        <button @click="() => selectTab('related')">
+          View Related
+        </button>
+      </div>
+    </template>
+    
+    <template #related>
+      <RelatedProducts />
+    </template>
+  </BaseTabsPanel>
+</template>
+```
+
+## Common Patterns
+
+### Confirmation dialog
+
+```vue
+<template>
+  <BaseModal :open="showConfirm" @click:overlay="cancel">
+    <div class="confirm-dialog">
+      <h3>Confirm Action</h3>
+      <p>Are you sure you want to proceed?</p>
+      <div class="actions">
+        <button @click="cancel">Cancel</button>
+        <button @click="confirm">Confirm</button>
+      </div>
+    </div>
+  </BaseModal>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+import { BaseModal } from '@empathyco/x-components'
+
+const showConfirm = ref(false)
+
+const emit = defineEmits(['confirm', 'cancel'])
+
+function confirm() {
+  emit('confirm')
+  showConfirm.value = false
+}
+
+function cancel() {
+  emit('cancel')
+  showConfirm.value = false
+}
+</script>
+```
+
+### Mobile filter drawer
+
+```vue
+<template>
+  <BaseIdModalOpen modalId="mobile-filters" class="md:hidden">
+    Filters
+  </BaseIdModalOpen>
+  
+  <BaseIdModal
+    modalId="mobile-filters"
+    contentClass="mobile-drawer"
+    :animation="SlideFromLeft"
+  >
+    <div class="drawer-header">
+      <h2>Filters</h2>
+      <BaseIdModalClose modalId="mobile-filters">✕</BaseIdModalClose>
+    </div>
+    <FiltersList />
+  </BaseIdModal>
+</template>
+```
+
+### Accordion with panels
+
+```vue
+<template>
+  <div class="accordion">
+    <div v-for="item in items" :key="item.id" class="accordion-item">
+      <BaseIdTogglePanelButton :panelId="item.id" class="accordion-header">
+        <h3>{{ item.title }}</h3>
+        <ChevronIcon />
+      </BaseIdTogglePanelButton>
+      
+      <BaseIdTogglePanel
+        :panelId="item.id"
+        :startOpen="false"
+        :animation="CollapseHeight"
+      >
+        <div class="accordion-content">
+          {{ item.content }}
+        </div>
+      </BaseIdTogglePanel>
+    </div>
+  </div>
+</template>
+```
+
+## Best Practices
+
+1. **Accessibility**: Ensure modals trap focus and can be closed with Escape key
+2. **Mobile UX**: Use full-screen modals or bottom sheets on mobile
+3. **Animation choice**: Use appropriate animations for context (slide for drawers, fade for overlays)
+4. **Focus management**: Always return focus to the trigger element when closing
+5. **Overlay behavior**: Make it clear that clicking the overlay closes the modal
+6. **Loading states**: Show loading indicators in modals for async operations
+7. **Scroll locking**: Modals automatically prevent body scroll when open

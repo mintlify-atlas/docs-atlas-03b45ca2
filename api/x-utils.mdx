@@ -1,0 +1,504 @@
+---
+title: '@empathyco/x-utils'
+description: 'Utility functions for Empathy search applications'
+icon: 'wrench'
+---
+
+## Overview
+
+`@empathyco/x-utils` is a utility package providing helper functions for working with objects, types, storage, and sessions in Empathy search applications. These utilities are used throughout the Interface X ecosystem.
+
+## Installation
+
+<CodeGroup>
+```bash npm
+npm install @empathyco/x-utils
+```
+
+```bash yarn
+yarn add @empathyco/x-utils
+```
+
+```bash pnpm
+pnpm add @empathyco/x-utils
+```
+</CodeGroup>
+
+## Main Exports
+
+### Object Utilities
+
+Powerful functions for working with objects.
+
+<ResponseField name="forEach" type="function">
+  Iterate over object properties with a callback
+</ResponseField>
+
+<ResponseField name="map" type="function">
+  Transform object values while preserving keys
+</ResponseField>
+
+<ResponseField name="reduce" type="function">
+  Reduce object to a single value
+</ResponseField>
+
+<ResponseField name="cleanUndefined" type="function">
+  Remove undefined properties from objects
+</ResponseField>
+
+<ResponseField name="cleanEmpty" type="function">
+  Remove empty, null, undefined properties from objects
+</ResponseField>
+
+<ResponseField name="objectFilter" type="function">
+  Filter object properties by condition
+</ResponseField>
+
+<ResponseField name="flatObject" type="function">
+  Flatten nested objects to single level
+</ResponseField>
+
+<ResponseField name="rename" type="function">
+  Rename object keys with prefix/suffix
+</ResponseField>
+
+<ResponseField name="deepEqual" type="function">
+  Deep equality comparison for objects
+</ResponseField>
+
+<ResponseField name="getNewAndUpdatedKeys" type="function">
+  Get keys that changed between two objects
+</ResponseField>
+
+### Type Guards
+
+Type checking utilities.
+
+<ResponseField name="isObject" type="function">
+  Check if value is a plain object
+</ResponseField>
+
+<ResponseField name="isArray" type="function">
+  Check if value is an array
+</ResponseField>
+
+### Storage Services
+
+Browser and in-memory storage implementations.
+
+<ResponseField name="browserStorageService" type="class">
+  Browser localStorage/sessionStorage wrapper
+</ResponseField>
+
+<ResponseField name="inMemoryStorageService" type="class">
+  In-memory storage implementation
+</ResponseField>
+
+### Session Management
+
+<ResponseField name="sessionService" type="object">
+  Session ID generation and management
+</ResponseField>
+
+### Deep Merge
+
+<ResponseField name="deepMerge" type="function">
+  Deep merge multiple objects
+</ResponseField>
+
+### Path Utilities
+
+<ResponseField name="getSafePropertyChain" type="function">
+  Safely access nested object properties
+</ResponseField>
+
+## Object Utilities
+
+### forEach
+
+Iterate over non-undefined object properties:
+
+```typescript
+import { forEach } from '@empathyco/x-utils'
+
+const obj = { a: 1, b: 2, c: undefined }
+
+forEach(obj, (key, value, index) => {
+  console.log(`${key}: ${value} at index ${index}`)
+})
+// Output:
+// a: 1 at index 0
+// b: 2 at index 1
+// (c is skipped because it's undefined)
+```
+
+### map
+
+Transform object values:
+
+```typescript
+import { map } from '@empathyco/x-utils'
+
+const numbers = { a: 1, b: 2, c: 3 }
+const doubled = map(numbers, (key, value) => value * 2)
+// Result: { a: 2, b: 4, c: 6 }
+```
+
+### reduce
+
+Reduce object to a value:
+
+```typescript
+import { reduce } from '@empathyco/x-utils'
+
+const numbers = { a: 1, b: 2, c: 3 }
+const sum = reduce(numbers, (acc, key, value) => acc + value, 0)
+// Result: 6
+```
+
+### cleanUndefined
+
+Remove undefined properties:
+
+```typescript
+import { cleanUndefined } from '@empathyco/x-utils'
+
+const obj = {
+  name: 'Product',
+  price: 29.99,
+  description: undefined,
+  category: null
+}
+
+const cleaned = cleanUndefined(obj)
+// Result: { name: 'Product', price: 29.99, category: null }
+```
+
+### cleanEmpty
+
+Remove empty values:
+
+```typescript
+import { cleanEmpty } from '@empathyco/x-utils'
+
+const obj = {
+  name: 'Product',
+  description: '',
+  tags: [],
+  metadata: {},
+  price: 0,
+  available: null
+}
+
+const cleaned = cleanEmpty(obj)
+// Result: { name: 'Product', price: 0 }
+// Removes: empty strings, empty arrays, empty objects, null
+```
+
+### objectFilter
+
+Filter object properties:
+
+```typescript
+import { objectFilter } from '@empathyco/x-utils'
+
+const products = {
+  apple: 1.99,
+  banana: 0.99,
+  cherry: 3.99
+}
+
+const expensive = objectFilter(products, (key, value) => value > 2)
+// Result: { cherry: 3.99 }
+```
+
+### flatObject
+
+Flatten nested objects:
+
+```typescript
+import { flatObject } from '@empathyco/x-utils'
+
+const nested = {
+  user: {
+    name: 'John',
+    address: {
+      city: 'NYC'
+    }
+  }
+}
+
+const flat = flatObject(nested)
+// Result: { name: 'John', city: 'NYC' }
+```
+
+### rename
+
+Rename object keys:
+
+```typescript
+import { rename } from '@empathyco/x-utils'
+
+const obj = { name: 'John', age: 30 }
+
+const prefixed = rename(obj, { prefix: 'user_' })
+// Result: { user_name: 'John', user_age: 30 }
+
+const suffixed = rename(obj, { suffix: '_value' })
+// Result: { name_value: 'John', age_value: 30 }
+```
+
+### deepEqual
+
+Deep equality check:
+
+```typescript
+import { deepEqual } from '@empathyco/x-utils'
+
+const obj1 = { a: 1, b: { c: 2 } }
+const obj2 = { a: 1, b: { c: 2 } }
+const obj3 = { a: 1, b: { c: 3 } }
+
+deepEqual(obj1, obj2) // true
+deepEqual(obj1, obj3) // false
+```
+
+### getNewAndUpdatedKeys
+
+Find changed keys:
+
+```typescript
+import { getNewAndUpdatedKeys } from '@empathyco/x-utils'
+
+const oldObj = { a: 1, b: 2 }
+const newObj = { a: 1, b: 3, c: 4 }
+
+const changed = getNewAndUpdatedKeys(newObj, oldObj)
+// Result: ['b', 'c']
+// 'a' is unchanged, 'b' is updated, 'c' is new
+```
+
+## Type Guards
+
+```typescript
+import { isObject, isArray } from '@empathyco/x-utils'
+
+isObject({}) // true
+isObject([]) // false
+isObject(null) // false
+
+isArray([]) // true
+isArray({}) // false
+```
+
+## Storage Services
+
+### Browser Storage
+
+```typescript
+import { browserStorageService } from '@empathyco/x-utils'
+
+// Use localStorage
+const localStorage = browserStorageService('local')
+
+localStorage.setItem('key', { data: 'value' })
+const value = localStorage.getItem<{ data: string }>('key')
+localStorage.removeItem('key')
+localStorage.clear()
+
+// Use sessionStorage
+const sessionStorage = browserStorageService('session')
+```
+
+### In-Memory Storage
+
+```typescript
+import { inMemoryStorageService } from '@empathyco/x-utils'
+
+const storage = inMemoryStorageService()
+
+storage.setItem('key', { data: 'value' })
+const value = storage.getItem('key')
+storage.removeItem('key')
+storage.clear()
+```
+
+## Session Service
+
+```typescript
+import { sessionService } from '@empathyco/x-utils'
+
+// Generate a unique session ID
+const sessionId = sessionService.getSessionId()
+
+// Check if session is expired
+const isExpired = sessionService.isExpired(timestamp, ttlMs)
+
+// Refresh session timestamp
+sessionService.refreshSession()
+```
+
+## Deep Merge
+
+```typescript
+import { deepMerge } from '@empathyco/x-utils'
+
+const obj1 = {
+  a: 1,
+  b: { c: 2, d: 3 }
+}
+
+const obj2 = {
+  b: { c: 4, e: 5 },
+  f: 6
+}
+
+const merged = deepMerge(obj1, obj2)
+// Result: {
+//   a: 1,
+//   b: { c: 4, d: 3, e: 5 },
+//   f: 6
+// }
+```
+
+## Safe Property Access
+
+```typescript
+import { getSafePropertyChain } from '@empathyco/x-utils'
+
+const obj = {
+  user: {
+    profile: {
+      name: 'John'
+    }
+  }
+}
+
+// Safe access to nested properties
+const name = getSafePropertyChain(obj, 'user.profile.name')
+// Result: 'John'
+
+const missing = getSafePropertyChain(obj, 'user.settings.theme')
+// Result: undefined (no error thrown)
+```
+
+## Type Definitions
+
+### Dictionary
+
+```typescript
+type Dictionary<T = any> = Record<string, T>
+```
+
+### Paths
+
+Type-safe path utilities for nested objects:
+
+```typescript
+import type { Path, PathValue } from '@empathyco/x-utils'
+
+interface User {
+  name: string
+  address: {
+    city: string
+    zip: number
+  }
+}
+
+type UserPaths = Path<User>
+// 'name' | 'address' | 'address.city' | 'address.zip'
+
+type CityValue = PathValue<User, 'address.city'>
+// string
+```
+
+## Usage with X Components
+
+```typescript
+import { defineComponent } from 'vue'
+import { cleanEmpty, deepEqual } from '@empathyco/x-utils'
+
+export default defineComponent({
+  methods: {
+    updateFilters(newFilters: Record<string, any>) {
+      // Clean empty filter values
+      const cleanFilters = cleanEmpty(newFilters)
+      
+      // Only update if changed
+      if (!deepEqual(cleanFilters, this.currentFilters)) {
+        this.$store.commit('setFilters', cleanFilters)
+      }
+    }
+  }
+})
+```
+
+## Common Patterns
+
+### Request Parameter Cleaning
+
+```typescript
+import { cleanEmpty, cleanUndefined } from '@empathyco/x-utils'
+
+function prepareSearchParams(params: SearchParams) {
+  return cleanEmpty({
+    q: params.query,
+    size: params.pageSize,
+    filters: params.filters?.length ? params.filters : undefined,
+    sort: params.sort
+  })
+}
+```
+
+### State Comparison
+
+```typescript
+import { deepEqual, getNewAndUpdatedKeys } from '@empathyco/x-utils'
+
+function onStateChange(newState: State, oldState: State) {
+  if (deepEqual(newState, oldState)) {
+    return // No changes
+  }
+  
+  const changedKeys = getNewAndUpdatedKeys(newState, oldState)
+  changedKeys.forEach(key => {
+    console.log(`${key} changed from`, oldState[key], 'to', newState[key])
+  })
+}
+```
+
+### Object Transformation
+
+```typescript
+import { map, rename } from '@empathyco/x-utils'
+
+function normalizeAPIResponse(response: APIResponse) {
+  // Transform values
+  const normalized = map(response, (key, value) => {
+    if (typeof value === 'string') {
+      return value.toLowerCase()
+    }
+    return value
+  })
+  
+  // Rename keys
+  return rename(normalized, { prefix: 'api_' })
+}
+```
+
+## Related Packages
+
+- [@empathyco/x-components](/api/x-components) - Uses these utilities throughout
+- [@empathyco/x-adapter](/api/x-adapter) - Uses utilities for request/response handling
+- [@empathyco/x-types](/api/x-types) - Type definitions that work with these utilities
+
+## Resources
+
+<CardGroup cols={2}>
+  <Card title="GitHub Repository" icon="github" href="https://github.com/empathyco/x">
+    View source code and examples
+  </Card>
+  <Card title="x-components API" icon="cube" href="/api/x-components">
+    See how utilities are used in components
+  </Card>
+</CardGroup>

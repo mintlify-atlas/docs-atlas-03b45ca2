@@ -1,0 +1,537 @@
+---
+title: Semantic Queries
+description: Provide alternative query suggestions when search results are insufficient
+---
+
+## Overview
+
+The Semantic Queries module provides AI-powered alternative search queries when the original query returns few or no results. This helps users:
+
+- Find relevant results when their query is too specific
+- Discover related search terms
+- Reformulate unsuccessful searches
+- Explore semantically similar queries
+- Reduce zero-results experiences
+
+## When to Use
+
+Implement semantic queries when you need to:
+
+- Handle low or no-results scenarios gracefully
+- Suggest alternative search terms to users
+- Improve query refinement workflows
+- Reduce search abandonment rates
+- Help users discover related products/content
+- Provide semantic search assistance
+
+## Configuration and Setup
+
+### Basic Setup
+
+Add the `SemanticQueries` component to display alternative queries:
+
+```vue
+<template>
+  <div>
+    <SearchBox />
+    
+    <!-- Show semantic queries when needed -->
+    <SemanticQueries v-if="shouldShowSemanticQueries" />
+    
+    <ResultsList />
+  </div>
+</template>
+
+<script setup>
+import { SemanticQueries } from '@empathyco/x-components/semantic-queries'
+import { SearchBox, ResultsList } from '@empathyco/x-components/search'
+import { useState } from '@empathyco/x-components'
+import { computed } from 'vue'
+
+const { totalResults } = useState('search')
+const { threshold } = useState('semanticQueries').config
+
+const shouldShowSemanticQueries = computed(() => {
+  return totalResults.value > 0 && totalResults.value < threshold.value
+})
+</script>
+```
+
+### Configuration Options
+
+Configure the module behavior:
+
+```vue
+<script setup>
+import { use$x } from '@empathyco/x-components'
+
+const $x = use$x()
+
+// Configure semantic queries via store initialization or config
+const config = {
+  // Maximum number of semantic queries to request
+  maxItemsToRequest: 5,
+  
+  // Show semantic queries when results are below this threshold
+  threshold: 3
+}
+</script>
+```
+
+## API Reference
+
+### Configuration Interface
+
+```typescript
+interface SemanticQueriesConfig {
+  /** Maximum number of semantic queries to request */
+  maxItemsToRequest: number
+  
+  /** Maximum results threshold to display semantic queries */
+  threshold: number
+}
+```
+
+### Store State
+
+```typescript
+interface SemanticQueriesState {
+  /** Current query */
+  query: string
+  
+  /** Total results from main search */
+  totalResults: number
+  
+  /** List of semantic query suggestions */
+  semanticQueries: SemanticQuery[]
+  
+  /** Module configuration */
+  config: SemanticQueriesConfig
+  
+  /** Extra params for the request */
+  params: Dictionary<unknown>
+  
+  /** Selected related tags */
+  relatedTags: RelatedTag[]
+}
+```
+
+### Store Getters
+
+```typescript
+interface SemanticQueriesGetters {
+  /** The request object for fetching semantic queries */
+  request: SemanticQueriesRequest | null
+  
+  /** Normalized query string */
+  normalizedQuery: string
+  
+  /** Query including selected related tags */
+  query: string
+}
+```
+
+### Store Actions
+
+```typescript
+interface SemanticQueriesActions {
+  /** Fetch semantic queries from backend */
+  fetchSemanticQuery: (
+    request: SemanticQueriesRequest | null
+  ) => SemanticQueriesResponse | null
+  
+  /** Fetch and save semantic queries to state */
+  fetchAndSaveSemanticQuery: (
+    request: SemanticQueriesRequest | null
+  ) => void
+}
+```
+
+### Store Mutations
+
+```typescript
+interface SemanticQueriesMutations {
+  /** Set the query */
+  setQuery: (query: string) => void
+  
+  /** Set total results count */
+  setTotalResults: (totalResults: number) => void
+  
+  /** Set semantic queries list */
+  setSemanticQueries: (semanticQueries: SemanticQuery[]) => void
+  
+  /** Set extra params */
+  setParams: (params: Dictionary<unknown>) => void
+  
+  /** Set related tags */
+  setSemanticQueriesRelatedTags: (relatedTags: RelatedTag[]) => void
+  
+  /** Merge configuration */
+  mergeConfig: (config: Partial<SemanticQueriesConfig>) => void
+}
+```
+
+### Events
+
+```typescript
+interface SemanticQueriesXEvents {
+  /** Request parameters updated */
+  SemanticQueryRequestUpdated: SemanticQueriesRequest | null
+  
+  /** Semantic queries response changed */
+  SemanticQueriesResponseChanged: SemanticQuery[]
+  
+  /** User selected a semantic query */
+  UserSelectedASemanticQuery: SemanticQuery
+}
+```
+
+### SemanticQuery Type
+
+```typescript
+interface SemanticQuery {
+  /** The alternative query string */
+  query: string
+  
+  /** Semantic distance/similarity score */
+  distance: number
+  
+  /** Optional tagging information */
+  tagging?: Tagging
+}
+```
+
+## Examples
+
+### Basic Semantic Queries Display
+
+Display a list of semantic query suggestions:
+
+```vue
+<template>
+  <div>
+    <h3>Try these related searches:</h3>
+    <SemanticQueries />
+  </div>
+</template>
+
+<script setup>
+import { SemanticQueries } from '@empathyco/x-components/semantic-queries'
+</script>
+```
+
+### Custom Suggestion Layout
+
+Customize how semantic queries are displayed:
+
+```vue
+<template>
+  <SemanticQueries #suggestion="{ suggestion }">
+    <button @click="selectQuery(suggestion)">
+      {{ suggestion.query }}
+      <span class="similarity">
+        ({{ Math.round(suggestion.distance * 100) }}% similar)
+      </span>
+    </button>
+  </SemanticQueries>
+</template>
+
+<script setup>
+import { SemanticQueries } from '@empathyco/x-components/semantic-queries'
+import { use$x } from '@empathyco/x-components'
+
+const $x = use$x()
+
+function selectQuery(semanticQuery) {
+  $x.emit('UserSelectedASemanticQuery', semanticQuery)
+  $x.emit('UserAcceptedAQuery', semanticQuery.query)
+}
+</script>
+```
+
+### With Query Previews
+
+Show result previews for each semantic query:
+
+```vue
+<template>
+  <SemanticQueries #default="{ queries, findSemanticQuery }">
+    <div class="semantic-queries-preview">
+      <QueryPreviewList :queries="queries">
+        <template #query-preview="{ query, results }">
+          <div class="query-card">
+            <h4>{{ query }}</h4>
+            
+            <div class="results-preview">
+              <div v-for="result in results" :key="result.id">
+                {{ result.name }}
+              </div>
+            </div>
+            
+            <button @click="acceptQuery(query)">
+              Search "{{ query }}"
+            </button>
+          </div>
+        </template>
+      </QueryPreviewList>
+    </div>
+  </SemanticQueries>
+</template>
+
+<script setup>
+import { SemanticQueries } from '@empathyco/x-components/semantic-queries'
+import { QueryPreviewList } from '@empathyco/x-components/queries-preview'
+import { use$x } from '@empathyco/x-components'
+
+const $x = use$x()
+
+function acceptQuery(query: string) {
+  $x.emit('UserAcceptedAQuery', query)
+}
+</script>
+```
+
+### No Results Fallback
+
+Show semantic queries as a fallback for no results:
+
+```vue
+<template>
+  <div>
+    <SearchBox />
+    
+    <div v-if="hasResults">
+      <ResultsList />
+    </div>
+    
+    <div v-else class="no-results">
+      <h2>No results found for "{{ query }}"</h2>
+      
+      <div v-if="semanticQueries.length > 0">
+        <p>Try these related searches:</p>
+        <SemanticQueries />
+      </div>
+      
+      <div v-else>
+        <p>Try a different search term</p>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { SemanticQueries } from '@empathyco/x-components/semantic-queries'
+import { SearchBox, ResultsList } from '@empathyco/x-components/search'
+import { useState } from '@empathyco/x-components'
+import { computed } from 'vue'
+
+const { results, query } = useState('search')
+const { semanticQueries } = useState('semanticQueries')
+
+const hasResults = computed(() => results.value.length > 0)
+</script>
+```
+
+### Conditional Display Based on Threshold
+
+Show semantic queries only when results are below threshold:
+
+```vue
+<template>
+  <div>
+    <SearchBox />
+    
+    <div v-if="totalResults > threshold">
+      <!-- Normal results display -->
+      <ResultsList />
+    </div>
+    
+    <div v-else-if="totalResults > 0">
+      <!-- Few results: show both results and semantic queries -->
+      <div class="limited-results">
+        <h3>Limited results found</h3>
+        <ResultsList />
+        
+        <aside>
+          <h4>You might also like:</h4>
+          <SemanticQueries />
+        </aside>
+      </div>
+    </div>
+    
+    <div v-else>
+      <!-- No results: show only semantic queries -->
+      <SemanticQueries />
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { SemanticQueries } from '@empathyco/x-components/semantic-queries'
+import { SearchBox, ResultsList } from '@empathyco/x-components/search'
+import { useState } from '@empathyco/x-components'
+
+const { totalResults } = useState('search')
+const { config } = useState('semanticQueries')
+const threshold = config.value.threshold
+</script>
+```
+
+### Limit Number of Suggestions
+
+Control how many semantic queries to display:
+
+```vue
+<template>
+  <SemanticQueries
+    :maxItemsToRender="3"
+    :animation="fadeAnimation"
+  />
+</template>
+
+<script setup>
+import { SemanticQueries } from '@empathyco/x-components/semantic-queries'
+import { FadeAndSlide } from '@empathyco/x-components'
+
+const fadeAnimation = FadeAndSlide
+</script>
+```
+
+### Track Semantic Query Selection
+
+Track when users select semantic queries:
+
+```vue
+<script setup>
+import { use$x } from '@empathyco/x-components'
+
+const $x = use$x()
+
+// Listen to semantic query selection
+$x.on('UserSelectedASemanticQuery').subscribe((semanticQuery) => {
+  // Track the selection
+  console.log('User selected semantic query:', semanticQuery.query)
+  console.log('Similarity score:', semanticQuery.distance)
+  
+  // Send to analytics
+  trackEvent('semantic_query_selected', {
+    original_query: getCurrentQuery(),
+    selected_query: semanticQuery.query,
+    similarity: semanticQuery.distance
+  })
+})
+</script>
+```
+
+## Advanced Usage
+
+### Custom Semantic Query Component
+
+Build a custom semantic query component:
+
+```vue
+<template>
+  <SemanticQuery
+    :suggestion="semanticQuery"
+    #default="{ suggestion, query }"
+  >
+    <div class="custom-semantic-query">
+      <span class="query-text">{{ suggestion.query }}</span>
+      <span class="distance-badge">{{ formatDistance(suggestion.distance) }}</span>
+    </div>
+  </SemanticQuery>
+</template>
+
+<script setup>
+import { SemanticQuery } from '@empathyco/x-components/semantic-queries'
+
+function formatDistance(distance: number): string {
+  const percentage = Math.round(distance * 100)
+  return `${percentage}% match`
+}
+</script>
+```
+
+### Integrate with Related Tags
+
+Combine semantic queries with related tags:
+
+```vue
+<template>
+  <div>
+    <SemanticQueries />
+    
+    <!-- Related tags are considered in semantic query requests -->
+    <RelatedTags />
+  </div>
+</template>
+
+<script setup>
+import { SemanticQueries } from '@empathyco/x-components/semantic-queries'
+import { RelatedTags } from '@empathyco/x-components/related-tags'
+
+// When related tags are selected, semantic queries request
+// includes the selected tags in the query
+</script>
+```
+
+### Request Optimization
+
+The module automatically:
+- Debounces requests based on query changes
+- Clears queries when user clears search
+- Updates total results from search response
+- Includes extra params in requests
+
+```typescript
+// Wiring automatically handles:
+// - UserClearedQuery -> clears semantic queries
+// - SearchResponseChanged -> updates query and total results
+// - ExtraParamsChanged -> updates request params
+// - SelectedRelatedTagsChanged -> updates related tags
+```
+
+### Backend Integration
+
+Your backend endpoint should:
+
+```typescript
+// Request format
+interface SemanticQueriesRequest {
+  query: string
+  maxItems?: number
+  filters?: Filter[]
+  extraParams?: Dictionary<unknown>
+}
+
+// Response format
+interface SemanticQueriesResponse {
+  semanticQueries: SemanticQuery[]
+}
+
+interface SemanticQuery {
+  query: string
+  distance: number // Similarity score (0-1)
+  tagging?: Tagging // Optional tracking info
+}
+```
+
+## Best Practices
+
+1. **Set appropriate threshold** - Test different thresholds to find optimal value
+2. **Limit number of suggestions** - Show 3-5 semantic queries to avoid overwhelming users
+3. **Show similarity scores** - Help users understand relevance of suggestions
+4. **Include query previews** - Show sample results for each semantic query
+5. **Track selections** - Measure which semantic queries are most helpful
+6. **Handle no suggestions** - Have fallback UI when no semantic queries available
+7. **Test with real queries** - Validate suggestions make semantic sense
+8. **Consider performance** - Semantic queries may add latency to no-results scenarios
+9. **A/B test presentation** - Experiment with different ways to display suggestions
+10. **Monitor effectiveness** - Track if semantic queries reduce abandonment
+
+## Related Resources
+
+- [Search Module](/api/modules/search)
+- [Query Suggestions](/components/query-suggestions)
+- [Related Tags](/components/related-tags)
+- [Queries Preview](/components/queries-preview)

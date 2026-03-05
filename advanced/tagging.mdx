@@ -1,0 +1,448 @@
+---
+title: Tagging and Analytics
+description: Track user interactions and send analytics events to measure search performance
+---
+
+## Overview
+
+The Tagging module provides comprehensive analytics tracking for your search interface. It captures user interactions, search events, and result engagement to help you:
+
+- Measure search performance and user behavior
+- Track click-through rates and conversion metrics
+- Analyze search effectiveness and relevance
+- Integrate with external analytics platforms
+- Support A/B testing and experimentation
+
+## When to Use
+
+Implement tagging when you need to:
+
+- Track user clicks on search results
+- Measure search query performance
+- Monitor conversion events (add-to-cart, purchases)
+- Collect data for search relevance tuning
+- Integrate with analytics platforms (GA, Adobe Analytics, etc.)
+- Comply with privacy regulations (GDPR, CCPA)
+
+## Configuration and Setup
+
+### Basic Setup
+
+Add the `Tagging` component to enable analytics tracking:
+
+```vue
+<template>
+  <Tagging />
+</template>
+
+<script setup>
+import { Tagging } from '@empathyco/x-components/tagging'
+</script>
+```
+
+### Configuration Options
+
+Configure the tagging module using the `TaggingConfigProvided` event:
+
+```vue
+<script setup>
+import { use$x } from '@empathyco/x-components'
+
+const $x = use$x()
+
+$x.emit('TaggingConfigProvided', {
+  // Time in ms to debounce query tracking (default: 500)
+  queryTaggingDebounceMs: 500,
+  
+  // Session timeout in ms (default: 30 minutes)
+  sessionTTLMs: 30 * 60 * 1000,
+  
+  // Storage TTL for result info in ms (default: 24 hours)
+  storageTTLMs: 24 * 60 * 60 * 1000,
+  
+  // Result field to use as storage key (default: 'url')
+  storageKey: 'url'
+})
+</script>
+```
+
+### Consent Management
+
+Handle user consent for tracking:
+
+```vue
+<script setup>
+import { use$x } from '@empathyco/x-components'
+
+const $x = use$x()
+
+// Set initial consent
+$x.emit('ConsentProvided', true)
+
+// Update consent when user changes preferences
+function updateConsent(hasConsent: boolean) {
+  $x.emit('ConsentChanged', hasConsent)
+}
+</script>
+```
+
+When consent is revoked, the session ID is automatically cleared.
+
+## API Reference
+
+### Configuration Interface
+
+```typescript
+interface TaggingConfig {
+  /** Time in milliseconds to debounce query tracking */
+  queryTaggingDebounceMs: number
+  
+  /** Session timeout in milliseconds */
+  sessionTTLMs: number
+  
+  /** Time in milliseconds to keep result information */
+  storageTTLMs: number | null
+  
+  /** Result field to use as storage key */
+  storageKey: string | null
+}
+```
+
+### Store State
+
+```typescript
+interface TaggingState {
+  /** Current consent status */
+  consent: boolean | null
+  
+  /** Enable tagging for no-results fallback solutions */
+  noResultsTaggingEnabled: boolean
+  
+  /** Module configuration */
+  config: TaggingConfig
+  
+  /** Tagging info for last accepted query */
+  queryTaggingInfo: TaggingRequest | null
+}
+```
+
+### Store Actions
+
+```typescript
+interface TaggingActions {
+  /** Track a user interaction */
+  track: (tagging: TaggingRequest | TaggingRequest[]) => void
+}
+```
+
+### Store Mutations
+
+```typescript
+interface TaggingMutations {
+  setConsent: (consent: boolean) => void
+  setQueryTaggingInfo: (queryTaggingInfo: TaggingRequest) => void
+  setNoResultsTaggingEnabled: (module: XModuleName) => void
+  mergeConfig: (config: Partial<TaggingConfig>) => void
+}
+```
+
+### Events
+
+```typescript
+interface TaggingXEvents {
+  /** Consent status changed */
+  ConsentChanged: boolean
+  
+  /** Consent provided by user */
+  ConsentProvided: boolean
+  
+  /** Product detail page loaded */
+  PDPIsLoaded: string
+  
+  /** Result URL tracking enabled */
+  ResultURLTrackingEnabled: string
+  
+  /** Search tagging information received */
+  SearchTaggingReceived: TaggingRequest
+  
+  /** Element displayed in viewport */
+  TrackableElementDisplayed: Taggable
+  
+  /** User clicked add-to-cart from PDP */
+  UserClickedPDPAddToCart: string | undefined
+  
+  /** Tagging configuration provided */
+  TaggingConfigProvided: TaggingConfig
+}
+```
+
+## Examples
+
+### Track Search Queries
+
+Queries are tracked automatically with debouncing:
+
+```vue
+<template>
+  <Tagging />
+  <SearchBox />
+</template>
+
+<script setup>
+import { Tagging } from '@empathyco/x-components/tagging'
+import { SearchBox } from '@empathyco/x-components/search-box'
+</script>
+```
+
+The module tracks:
+- Query text
+- Total results
+- Search response time
+- User session ID
+
+### Track Result Clicks
+
+Result clicks are tracked automatically when users click on results:
+
+```vue
+<template>
+  <ResultsList>
+    <template #result="{ item }">
+      <ResultLink :result="item">
+        {{ item.name }}
+      </ResultLink>
+    </template>
+  </ResultsList>
+</template>
+
+<script setup>
+import { ResultsList, ResultLink } from '@empathyco/x-components/search'
+</script>
+```
+
+Tracked data includes:
+- Result ID and position
+- Query that generated the result
+- Click timestamp
+- User session ID
+
+### Track Add-to-Cart Events
+
+Track when users add products to cart:
+
+```vue
+<template>
+  <ResultsList>
+    <template #result="{ item }">
+      <div>
+        <h3>{{ item.name }}</h3>
+        <button @click="addToCart(item)">
+          Add to Cart
+        </button>
+      </div>
+    </template>
+  </ResultsList>
+</template>
+
+<script setup>
+import { use$x } from '@empathyco/x-components'
+import { ResultsList } from '@empathyco/x-components/search'
+
+const $x = use$x()
+
+function addToCart(result) {
+  // Emit add-to-cart event
+  $x.emit('UserClickedResultAddToCart', result)
+  
+  // Your add-to-cart logic here
+}
+</script>
+```
+
+### Track Display Events
+
+Track when results appear in the viewport:
+
+```vue
+<template>
+  <ResultsList>
+    <template #result="{ item }">
+      <div v-intersection="() => trackDisplay(item)">
+        {{ item.name }}
+      </div>
+    </template>
+  </ResultsList>
+</template>
+
+<script setup>
+import { use$x } from '@empathyco/x-components'
+
+const $x = use$x()
+
+function trackDisplay(result) {
+  $x.emit('TrackableElementDisplayed', result)
+}
+</script>
+```
+
+### Custom Tracking
+
+Dispatch custom tracking events:
+
+```vue
+<script setup>
+import { useState } from '@empathyco/x-components'
+
+const { dispatch } = useState('tagging')
+
+// Track custom event
+dispatch('track', {
+  url: '/api/tagging/custom',
+  params: {
+    event: 'custom_interaction',
+    userId: 'user123',
+    timestamp: Date.now(),
+    metadata: {
+      section: 'filters',
+      action: 'applied'
+    }
+  }
+})
+</script>
+```
+
+### Integrate with Google Analytics
+
+Bridge tagging events to Google Analytics:
+
+```vue
+<script setup>
+import { use$x } from '@empathyco/x-components'
+
+const $x = use$x()
+
+// Listen to search tracking events
+$x.on('SearchTaggingReceived').subscribe((tagging) => {
+  gtag('event', 'search', {
+    search_term: tagging.params.q,
+    results: tagging.params.totalHits
+  })
+})
+
+// Listen to result click events
+$x.on('UserClickedAResult').subscribe((result) => {
+  gtag('event', 'select_item', {
+    item_id: result.id,
+    item_name: result.name
+  })
+})
+</script>
+```
+
+### Handle No-Results Scenarios
+
+Track no-results queries with fallback solutions:
+
+```vue
+<template>
+  <Tagging />
+  <SearchBox />
+  <div v-if="hasResults">
+    <ResultsList />
+  </div>
+  <div v-else>
+    <SemanticQueries />
+  </div>
+</template>
+
+<script setup>
+import { Tagging } from '@empathyco/x-components/tagging'
+import { SearchBox, ResultsList } from '@empathyco/x-components/search'
+import { SemanticQueries } from '@empathyco/x-components/semantic-queries'
+import { useState } from '@empathyco/x-components'
+
+const { results } = useState('search')
+const hasResults = computed(() => results.value.length > 0)
+</script>
+```
+
+When semantic queries or related prompts are shown, the tagging module sets `totalHits` to `-1` to differentiate from true no-results scenarios.
+
+## Advanced Usage
+
+### Session Management
+
+The tagging module uses a session service to track user sessions:
+
+```typescript
+import { DefaultSessionService } from '@empathyco/x-utils'
+
+const sessionService = DefaultSessionService.instance
+
+// Get current session ID
+const sessionId = sessionService.getSessionId()
+
+// Clear session
+sessionService.clearSessionId()
+```
+
+### External Tagging Service
+
+Customize how tagging data is sent:
+
+```typescript
+import { DefaultExternalTaggingService } from '@empathyco/x-components/tagging'
+
+const taggingService = DefaultExternalTaggingService.instance
+
+// Store clicked result
+taggingService.storeResultClicked(result)
+
+// Store add-to-cart event
+taggingService.storeAddToCart(productId)
+
+// Move data to session storage (for PDP tracking)
+taggingService.moveToSessionStorage(resultId)
+
+// Track add-to-cart from PDP
+taggingService.trackAddToCart(productId)
+```
+
+### Query Tagging Debouncing
+
+Query tracking is debounced to avoid excessive tracking. The debounce is:
+- Canceled when the query is cleared
+- Forced when user clicks a result or reaches end of results
+
+```typescript
+// Configuration
+const config = {
+  queryTaggingDebounceMs: 500 // Wait 500ms after typing stops
+}
+
+// Force events (bypass debounce)
+const forceEvents = [
+  'UserClickedAResult',
+  'UserClickedAPromoted',
+  'UserClickedABanner',
+  'UserClickedARedirection',
+  'UserReachedResultsListEnd'
+]
+```
+
+## Best Practices
+
+1. **Always respect user consent** - Check consent before tracking personal data
+2. **Configure appropriate debounce** - Balance between data accuracy and API calls
+3. **Track meaningful interactions** - Focus on events that indicate user intent
+4. **Monitor session duration** - Adjust `sessionTTLMs` based on user behavior
+5. **Handle privacy compliance** - Anonymize data when required by regulations
+6. **Test tracking implementation** - Verify events are sent correctly before production
+7. **Document custom events** - Keep track of custom tracking implementations
+8. **Set up monitoring** - Alert on tracking failures or anomalies
+
+## Related Resources
+
+- [Search Module](/api/modules/search)
+- [Search Results](/components/search-results)
+- [Event System](/concepts/event-system)

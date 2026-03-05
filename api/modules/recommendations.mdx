@@ -1,0 +1,420 @@
+---
+title: 'Recommendations Module'
+description: 'Product recommendations functionality'
+icon: 'sparkles'
+---
+
+## Overview
+
+The Recommendations module provides personalized product recommendations based on user behavior, product affinity, and business rules. It manages fetching, storing, and displaying recommended items.
+
+## State
+
+The Recommendations module maintains the following state:
+
+<ResponseField name="recommendations" type="Result[]">
+  Array of recommended items
+</ResponseField>
+
+<ResponseField name="status" type="'initial' | 'loading' | 'success' | 'error'">
+  Current request status
+</ResponseField>
+
+<ResponseField name="origin" type="string">
+  Origin identifier for tracking (defaults to 'recommendations')
+</ResponseField>
+
+<ResponseField name="params" type="Record<string, unknown>">
+  Additional request parameters
+</ResponseField>
+
+<ResponseField name="config" type="RecommendationsConfig">
+  Module configuration options
+</ResponseField>
+
+## Configuration
+
+<ParamField path="maxItemsToRequest" type="number" default="24">
+  Maximum number of recommendations to request from the API
+</ParamField>
+
+## Getters
+
+<ResponseField name="request" type="RecommendationsRequest">
+  Computed recommendations request object built from current state
+</ResponseField>
+
+## Mutations
+
+<ResponseField name="setRecommendations" type="(state, recommendations: Result[]) => void">
+  Update the recommendations list
+</ResponseField>
+
+<ResponseField name="updateRecommendation" type="(state, recommendation: Result) => void">
+  Update a specific recommendation in the list (e.g., for wishlisting)
+</ResponseField>
+
+<ResponseField name="setStatus" type="(state, status: Status) => void">
+  Update request status
+</ResponseField>
+
+<ResponseField name="setParams" type="(state, params: Record<string, unknown>) => void">
+  Update request parameters
+</ResponseField>
+
+<ResponseField name="setConfig" type="(state, config: Partial<RecommendationsConfig>) => void">
+  Update configuration
+</ResponseField>
+
+<ResponseField name="mergeConfig" type="(state, config: Partial<RecommendationsConfig>) => void">
+  Merge configuration with existing config
+</ResponseField>
+
+## Actions
+
+<ResponseField name="fetchRecommendations" type="(context) => Promise<RecommendationsResponse>">
+  Fetch recommendations from the API without updating state
+</ResponseField>
+
+<ResponseField name="fetchAndSaveRecommendations" type="(context) => Promise<RecommendationsResponse>">
+  Fetch recommendations and update module state
+</ResponseField>
+
+<ResponseField name="cancelFetchAndSaveRecommendations" type="(context) => Promise<void>">
+  Cancel any in-progress recommendations request
+</ResponseField>
+
+## Events Emitted
+
+<ResponseField name="UserClickedARecommendation" type="{ recommendation: Result }">
+  Emitted when user clicks a recommendation
+</ResponseField>
+
+<ResponseField name="RecommendationsChanged" type="{ recommendations: Result[] }">
+  Emitted when recommendations are updated
+</ResponseField>
+
+## Usage Examples
+
+### Basic Recommendations
+
+```typescript
+import { useStore } from 'vuex'
+
+const store = useStore()
+
+// Configure recommendations
+store.commit('x/recommendations/setConfig', {
+  maxItemsToRequest: 12
+})
+
+// Fetch recommendations
+await store.dispatch('x/recommendations/fetchAndSaveRecommendations')
+
+// Access recommendations
+const recommendations = store.state.x.recommendations.recommendations
+```
+
+### Product Detail Page Recommendations
+
+```typescript
+// Set product ID as parameter
+store.commit('x/recommendations/setParams', {
+  productId: 'product-123'
+})
+
+await store.dispatch('x/recommendations/fetchAndSaveRecommendations')
+```
+
+### Update Recommendation State
+
+```typescript
+import type { Result } from '@empathyco/x-types'
+
+// Update a recommendation (e.g., after wishlisting)
+const recommendation: Result = store.state.x.recommendations.recommendations[0]
+
+store.commit('x/recommendations/updateRecommendation', {
+  ...recommendation,
+  isWishlisted: true
+})
+```
+
+### Component Integration
+
+```vue
+<template>
+  <div class="recommendations">
+    <h2>Recommended for You</h2>
+    
+    <div v-if="isLoading" class="loading">
+      Loading recommendations...
+    </div>
+    
+    <div v-else-if="hasRecommendations" class="recommendations-grid">
+      <ProductCard
+        v-for="item in recommendations"
+        :key="item.id"
+        :product="item"
+        @click="onRecommendationClick(item)"
+        @wishlist="onWishlistToggle(item)"
+      />
+    </div>
+    
+    <div v-else class="no-recommendations">
+      No recommendations available
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed, onMounted } from 'vue'
+import { useStore } from 'vuex'
+import type { Result } from '@empathyco/x-types'
+import ProductCard from './ProductCard.vue'
+
+const store = useStore()
+
+const recommendations = computed(() => 
+  store.state.x.recommendations.recommendations
+)
+
+const isLoading = computed(() => 
+  store.state.x.recommendations.status === 'loading'
+)
+
+const hasRecommendations = computed(() => 
+  recommendations.value.length > 0
+)
+
+onMounted(async () => {
+  // Configure and fetch recommendations
+  store.commit('x/recommendations/setConfig', {
+    maxItemsToRequest: 8
+  })
+  
+  await store.dispatch('x/recommendations/fetchAndSaveRecommendations')
+})
+
+const onRecommendationClick = (item: Result) => {
+  // Track click event
+  store.dispatch('x/tagging/track', {
+    event: 'UserClickedARecommendation',
+    recommendation: item
+  })
+  
+  // Navigate to product page
+  window.location.href = item.url
+}
+
+const onWishlistToggle = (item: Result) => {
+  // Update local state
+  store.commit('x/recommendations/updateRecommendation', {
+    ...item,
+    isWishlisted: !item.isWishlisted
+  })
+  
+  // Update on backend
+  // ... API call to toggle wishlist
+}
+</script>
+```
+
+### Multiple Recommendation Types
+
+```vue
+<template>
+  <div>
+    <RecommendationSection
+      title="Similar Products"
+      :params="{ type: 'similar', productId: currentProductId }"
+    />
+    
+    <RecommendationSection
+      title="Frequently Bought Together"
+      :params="{ type: 'bundle', productId: currentProductId }"
+    />
+    
+    <RecommendationSection
+      title="Trending Now"
+      :params="{ type: 'trending' }"
+    />
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+import RecommendationSection from './RecommendationSection.vue'
+
+const currentProductId = ref('product-123')
+</script>
+```
+
+### Carousel Integration
+
+```vue
+<template>
+  <div class="recommendations-carousel">
+    <h2>You May Also Like</h2>
+    
+    <div class="carousel">
+      <button 
+        class="carousel-prev" 
+        @click="scrollPrev"
+        :disabled="!canScrollPrev"
+      >
+        ←
+      </button>
+      
+      <div class="carousel-track" ref="trackRef">
+        <div
+          v-for="item in recommendations"
+          :key="item.id"
+          class="carousel-item"
+        >
+          <ProductCard :product="item" />
+        </div>
+      </div>
+      
+      <button 
+        class="carousel-next" 
+        @click="scrollNext"
+        :disabled="!canScrollNext"
+      >
+        →
+      </button>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { useStore } from 'vuex'
+import ProductCard from './ProductCard.vue'
+
+const store = useStore()
+const trackRef = ref<HTMLElement>()
+const scrollPosition = ref(0)
+
+const recommendations = computed(() => 
+  store.state.x.recommendations.recommendations
+)
+
+const canScrollPrev = computed(() => scrollPosition.value > 0)
+const canScrollNext = computed(() => {
+  if (!trackRef.value) return false
+  const maxScroll = trackRef.value.scrollWidth - trackRef.value.clientWidth
+  return scrollPosition.value < maxScroll
+})
+
+const scrollPrev = () => {
+  if (trackRef.value) {
+    const scrollAmount = trackRef.value.clientWidth
+    trackRef.value.scrollBy({ left: -scrollAmount, behavior: 'smooth' })
+  }
+}
+
+const scrollNext = () => {
+  if (trackRef.value) {
+    const scrollAmount = trackRef.value.clientWidth
+    trackRef.value.scrollBy({ left: scrollAmount, behavior: 'smooth' })
+  }
+}
+
+onMounted(async () => {
+  await store.dispatch('x/recommendations/fetchAndSaveRecommendations')
+  
+  trackRef.value?.addEventListener('scroll', () => {
+    scrollPosition.value = trackRef.value?.scrollLeft ?? 0
+  })
+})
+</script>
+```
+
+### Context-Aware Recommendations
+
+```typescript
+import { computed, watch } from 'vue'
+import { useStore } from 'vuex'
+import { useRoute } from 'vue-router'
+
+const store = useStore()
+const route = useRoute()
+
+// Update recommendations based on context
+watch(
+  () => route.params.productId,
+  async (productId) => {
+    if (productId) {
+      // Product detail page - show related products
+      store.commit('x/recommendations/setParams', {
+        productId,
+        type: 'related'
+      })
+    } else if (route.path === '/cart') {
+      // Cart page - show complementary products
+      const cartItems = store.state.cart.items
+      store.commit('x/recommendations/setParams', {
+        cartItemIds: cartItems.map(item => item.id),
+        type: 'complementary'
+      })
+    } else {
+      // Home page - show personalized recommendations
+      store.commit('x/recommendations/setParams', {
+        type: 'personalized'
+      })
+    }
+    
+    await store.dispatch('x/recommendations/fetchAndSaveRecommendations')
+  },
+  { immediate: true }
+)
+```
+
+## Recommendation Types
+
+Common recommendation types you can request:
+
+<ResponseField name="related" type="string">
+  Products related to a specific item
+</ResponseField>
+
+<ResponseField name="similar" type="string">
+  Products similar to a specific item
+</ResponseField>
+
+<ResponseField name="bundle" type="string">
+  Frequently bought together
+</ResponseField>
+
+<ResponseField name="personalized" type="string">
+  Personalized based on user behavior
+</ResponseField>
+
+<ResponseField name="trending" type="string">
+  Currently trending products
+</ResponseField>
+
+<ResponseField name="complementary" type="string">
+  Products that complement cart items
+</ResponseField>
+
+## Related Modules
+
+- [Search Module](/api/modules/search) - Search functionality
+- [Tagging Module](/api/modules/tagging) - Tracking recommendation clicks
+
+## Type Reference
+
+Source: `/home/daytona/workspace/source/packages/x-components/src/x-modules/recommendations/store/module.ts:1`
+
+## Resources
+
+<CardGroup cols={2}>
+  <Card title="x-types" icon="brackets-curly" href="/api/x-types">
+    Type definitions for recommendations
+  </Card>
+  <Card title="x-components" icon="cube" href="/api/x-components">
+    Component library
+  </Card>
+</CardGroup>

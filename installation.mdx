@@ -1,0 +1,259 @@
+---
+title: "Installation"
+description: "Install and set up Interface X in your Vue.js project"
+---
+
+## Overview
+
+Interface X is a Vue.js component library for building powerful commerce search and discovery experiences. This guide will walk you through installing and configuring Interface X in your project.
+
+## Requirements
+
+<Info>
+  Interface X requires **Node.js 22+** and **npm 10+** to run.
+</Info>
+
+Before installing Interface X, ensure your development environment meets these requirements:
+
+- **Node.js**: Version 22 or higher
+- **Package Manager**: npm 10+, pnpm 9.15.9+, or yarn
+- **Vue.js**: Version 3.5.28 or compatible
+
+## Installation
+
+Install the core X Components package using your preferred package manager:
+
+<CodeGroup>
+
+```bash npm
+npm install @empathyco/x-components
+```
+
+```bash pnpm
+pnpm add @empathyco/x-components
+```
+
+```bash yarn
+yarn add @empathyco/x-components
+```
+
+</CodeGroup>
+
+## Peer Dependencies
+
+Interface X requires the following peer dependencies to be installed in your project:
+
+```json package.json
+{
+  "dependencies": {
+    "vue": "^3.5.28",
+    "vuex": "4.0.2"
+  }
+}
+```
+
+Install them if you haven't already:
+
+<CodeGroup>
+
+```bash npm
+npm install vue@^3.5.28 vuex@4.0.2
+```
+
+```bash pnpm
+pnpm add vue@^3.5.28 vuex@4.0.2
+```
+
+```bash yarn
+yarn add vue@^3.5.28 vuex@4.0.2
+```
+
+</CodeGroup>
+
+## Optional Packages
+
+Depending on your search backend, you may need additional adapter packages:
+
+### Search API Adapters
+
+<AccordionGroup>
+  <Accordion title="Empathy Platform Adapter" icon="plug">
+    For connecting to the Empathy Platform API:
+
+    ```bash
+    npm install @empathyco/x-adapter-platform
+    ```
+
+    This adapter is pre-configured to work with Empathy's search endpoints and provides out-of-the-box integration.
+  </Accordion>
+
+  <Accordion title="Custom API Adapter" icon="wrench">
+    For connecting to any other search API (Elasticsearch, Solr, etc.):
+
+    ```bash
+    npm install @empathyco/x-adapter
+    ```
+
+    The base adapter package allows you to create custom adapters for any search API. See the [adapter documentation](https://github.com/empathyco/x/tree/main/packages/x-adapter) for implementation details.
+  </Accordion>
+</AccordionGroup>
+
+### Design System (Optional)
+
+<Info>
+  The Interface X Design System (XDS) is a Tailwind CSS plugin for styling your components.
+</Info>
+
+```bash
+npm install @empathyco/x-tailwindcss tailwindcss
+```
+
+## Basic Setup
+
+Once installed, initialize Interface X in your Vue.js application:
+
+<Steps>
+  <Step title="Import and configure XInstaller">
+    Create a new file for your Interface X setup (e.g., `src/x-setup.ts`):
+
+    ```typescript src/x-setup.ts
+    import { XInstaller } from '@empathyco/x-components';
+    import { platformAdapter } from '@empathyco/x-adapter-platform';
+    import { createStore } from 'vuex';
+    import { XPlugin } from '@empathyco/x-components';
+
+    // Create the installer with your configuration
+    const installer = new XInstaller({
+      adapter: platformAdapter,
+      store: createStore({}),
+    });
+
+    export default installer;
+    ```
+  </Step>
+
+  <Step title="Initialize with snippet configuration">
+    Initialize Interface X with your search configuration:
+
+    ```typescript src/main.ts
+    import { createApp } from 'vue';
+    import App from './App.vue';
+    import installer from './x-setup';
+
+    // Initialize with your configuration
+    installer.init({
+      instance: 'your-instance-name',
+      lang: 'en',
+      env: 'production',
+      scope: 'your-scope',
+    });
+
+    const app = createApp(App);
+    app.mount('#app');
+    ```
+  </Step>
+
+  <Step title="Alternative: Global initialization">
+    You can also set up automatic initialization via a global `initX` function:
+
+    ```typescript
+    // Define configuration globally
+    window.initX = {
+      instance: 'your-instance-name',
+      lang: 'en',
+      env: 'production',
+      scope: 'your-scope',
+      currency: 'USD',
+      consent: true,
+    };
+    ```
+
+    The installer will automatically use this configuration when it detects `window.initX`.
+  </Step>
+</Steps>
+
+## Configuration Options
+
+The `SnippetConfig` object accepts the following parameters:
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `instance` | `string` | Yes | Your search instance identifier |
+| `lang` | `string` | Yes | Language code (e.g., 'en', 'es', 'fr') |
+| `env` | `string` | Yes | Environment ('production', 'staging', 'development') |
+| `scope` | `string` | Yes | Search scope or catalog identifier |
+| `currency` | `string` | No | Currency code (e.g., 'USD', 'EUR') |
+| `consent` | `boolean` | No | User consent for tracking |
+| `uiLang` | `string` | No | UI language (if different from search language) |
+| `documentDirection` | `'ltr' \| 'rtl'` | No | Document text direction |
+
+## Verify Installation
+
+To verify Interface X is properly installed and configured, check your browser console for the global Interface X API:
+
+```javascript
+console.log(window.InterfaceX);
+```
+
+You should see the Interface X API object with methods like `init()`, `setSnippetConfig()`, and event bus functionality.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart Guide" icon="rocket" href="/quickstart">
+    Build your first search interface in minutes
+  </Card>
+  
+  <Card title="Component Reference" icon="grid" href="/components">
+    Explore all available X Components
+  </Card>
+  
+  <Card title="API Adapters" icon="plug" href="/api-reference/adapters">
+    Configure your search backend connection
+  </Card>
+  
+  <Card title="Design System" icon="palette" href="/essentials/styling">
+    Customize the look and feel with XDS
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Module not found errors" icon="triangle-exclamation">
+    If you encounter module resolution errors:
+
+    1. Ensure all peer dependencies are installed
+    2. Clear your `node_modules` and lock file
+    3. Reinstall dependencies: `npm install` (or `pnpm install --frozen-lockfile`)
+    4. Check that your Node.js version is 22 or higher
+  </Accordion>
+
+  <Accordion title="Vue version conflicts" icon="code-branch">
+    Interface X requires Vue 3.5.28+. If you have an older version:
+
+    ```bash
+    npm install vue@^3.5.28
+    ```
+
+    Ensure no other packages in your project are depending on Vue 2.x.
+  </Accordion>
+
+  <Accordion title="TypeScript configuration" icon="code">
+    If you're using TypeScript, ensure your `tsconfig.json` includes:
+
+    ```json
+    {
+      "compilerOptions": {
+        "moduleResolution": "node",
+        "esModuleInterop": true,
+        "skipLibCheck": true
+      }
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+<Note>
+  Need help? Check out the [GitHub repository](https://github.com/empathyco/x) or the [full documentation](https://docs.empathy.co/develop-empathy-platform/build-search-ui/).
+</Note>

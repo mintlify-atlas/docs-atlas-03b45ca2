@@ -1,0 +1,467 @@
+---
+title: 'URL Module'
+description: 'URL parameter synchronization for search state'
+icon: 'link'
+---
+
+## Overview
+
+The URL module synchronizes search state with browser URL parameters, enabling:
+- Shareable search result pages
+- Browser back/forward navigation
+- Deep linking to search results
+- Bookmarkable searches
+
+It manages URL query parameters for search queries, filters, pagination, sorting, and other search state.
+
+## State
+
+The URL module maintains the following state:
+
+<ResponseField name="query" type="string">
+  Search query from URL
+</ResponseField>
+
+<ResponseField name="filter" type="string[]">
+  Array of filter IDs from URL
+</ResponseField>
+
+<ResponseField name="tag" type="string[]">
+  Array of related tag values from URL
+</ResponseField>
+
+<ResponseField name="page" type="number">
+  Page number from URL
+</ResponseField>
+
+<ResponseField name="sort" type="string">
+  Sort criteria from URL
+</ResponseField>
+
+<ResponseField name="scroll" type="string">
+  Scroll position from URL
+</ResponseField>
+
+<ResponseField name="prompt" type="string">
+  Prompt/semantic query from URL
+</ResponseField>
+
+<ResponseField name="initialExtraParams" type="Record<string, unknown>">
+  Additional parameters loaded from initial URL
+</ResponseField>
+
+## Configuration
+
+The URL module uses no configuration options. URL parameter names are fixed.
+
+## Getters
+
+<ResponseField name="urlParams" type="Record<string, any>">
+  All URL parameters as an object
+</ResponseField>
+
+## Mutations
+
+<ResponseField name="setQuery" type="(state, query: string) => void">
+  Update query in URL state
+</ResponseField>
+
+<ResponseField name="setFilters" type="(state, filters: Filter[]) => void">
+  Update filters in URL state from filter objects
+</ResponseField>
+
+<ResponseField name="setRelatedTags" type="(state, tags: RelatedTag[]) => void">
+  Update related tags in URL state
+</ResponseField>
+
+<ResponseField name="setPage" type="(state, page: number) => void">
+  Update page number in URL state
+</ResponseField>
+
+<ResponseField name="setSort" type="(state, sort: string) => void">
+  Update sort in URL state
+</ResponseField>
+
+<ResponseField name="setScroll" type="(state, scroll: string) => void">
+  Update scroll position in URL state
+</ResponseField>
+
+<ResponseField name="setPrompt" type="(state, prompt: string) => void">
+  Update prompt in URL state
+</ResponseField>
+
+<ResponseField name="setParams" type="(state, params: Record<string, any>) => void">
+  Update all URL parameters at once
+</ResponseField>
+
+<ResponseField name="setInitialExtraParams" type="(state, params: Record<string, unknown>) => void">
+  Set extra parameters from initial URL load
+</ResponseField>
+
+## Actions
+
+The URL module has no async actions. It only provides mutations for state management. URL updates are typically handled by watchers in components or other modules.
+
+## URL Parameter Format
+
+Default URL parameter names:
+
+<ParamField path="query" type="string">
+  Search query: `?query=running+shoes`
+</ParamField>
+
+<ParamField path="filter" type="string[]">
+  Selected filters (array): `?filter=brand:nike&filter=color:red`
+</ParamField>
+
+<ParamField path="tag" type="string[]">
+  Related tags (array): `?tag=athletic&tag=summer`
+</ParamField>
+
+<ParamField path="page" type="number">
+  Page number: `?page=2`
+</ParamField>
+
+<ParamField path="sort" type="string">
+  Sort criteria: `?sort=price:asc`
+</ParamField>
+
+<ParamField path="scroll" type="string">
+  Scroll identifier: `?scroll=results`
+</ParamField>
+
+<ParamField path="prompt" type="string">
+  AI/semantic prompt: `?prompt=comfortable+running+shoes`
+</ParamField>
+
+## Usage Examples
+
+### Read Initial URL Parameters
+
+```typescript
+import { useStore } from 'vuex'
+import { useRoute } from 'vue-router'
+
+const store = useStore()
+const route = useRoute()
+
+// Parse URL parameters on mount
+const urlParams = {
+  query: route.query.query as string,
+  filter: Array.isArray(route.query.filter) 
+    ? route.query.filter 
+    : route.query.filter ? [route.query.filter] : [],
+  page: parseInt(route.query.page as string) || 1,
+  sort: route.query.sort as string || ''
+}
+
+// Set in URL module
+store.commit('x/url/setParams', urlParams)
+
+// Also set in relevant modules
+store.commit('x/search/setQuery', urlParams.query)
+store.commit('x/search/setPage', urlParams.page)
+store.commit('x/search/setSort', urlParams.sort)
+```
+
+### Sync State to URL
+
+```typescript
+import { watch } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+const store = useStore()
+
+// Watch search state and update URL
+watch(
+  () => ({
+    query: store.state.x.search.query,
+    page: store.state.x.search.page,
+    sort: store.state.x.search.sort,
+    filters: store.getters['x/facets/selectedFilters']
+  }),
+  (newState) => {
+    const urlParams: Record<string, any> = {}
+    
+    if (newState.query) {
+      urlParams.query = newState.query
+    }
+    
+    if (newState.page > 1) {
+      urlParams.page = newState.page
+    }
+    
+    if (newState.sort) {
+      urlParams.sort = newState.sort
+    }
+    
+    if (newState.filters.length) {
+      urlParams.filter = newState.filters.map(f => f.id)
+    }
+    
+    // Update URL without navigation
+    router.replace({ query: urlParams })
+    
+    // Update URL module state
+    store.commit('x/url/setParams', urlParams)
+  },
+  { deep: true }
+)
+```
+
+### Browser Navigation
+
+```typescript
+import { watch } from 'vue'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
+const store = useStore()
+
+// Handle browser back/forward
+watch(
+  () => route.query,
+  async (query) => {
+    // Update all modules from URL
+    const searchQuery = query.query as string || ''
+    const page = parseInt(query.page as string) || 1
+    const sort = query.sort as string || ''
+    const filters = Array.isArray(query.filter) 
+      ? query.filter 
+      : query.filter ? [query.filter] : []
+    
+    store.commit('x/search/setQuery', searchQuery)
+    store.commit('x/search/setPage', page)
+    store.commit('x/search/setSort', sort)
+    
+    // Update filter selection
+    filters.forEach(filterId => {
+      const filter = findFilterById(filterId as string)
+      if (filter) {
+        store.commit('x/facets/mutateFilter', {
+          filter,
+          newFilterState: { selected: true }
+        })
+      }
+    })
+    
+    // Fetch results
+    await store.dispatch('x/search/fetchAndSaveSearchResponse')
+  }
+)
+```
+
+### Component Integration
+
+```vue
+<template>
+  <div class="search-interface">
+    <SearchBox @search="handleSearch" />
+    <Filters @change="handleFilterChange" />
+    <ResultsList />
+    <Pagination @change="handlePageChange" />
+  </div>
+</template>
+
+<script setup lang="ts">
+import { onMounted, watch } from 'vue'
+import { useStore } from 'vuex'
+import { useRoute, useRouter } from 'vue-router'
+import type { Filter } from '@empathyco/x-types'
+
+const store = useStore()
+const route = useRoute()
+const router = useRouter()
+
+// Initialize from URL on mount
+onMounted(() => {
+  const query = route.query.query as string
+  if (query) {
+    store.commit('x/search/setQuery', query)
+    store.dispatch('x/search/fetchAndSaveSearchResponse')
+  }
+})
+
+// Update URL when state changes
+watch(
+  () => store.getters['x/url/urlParams'],
+  (params) => {
+    router.replace({ query: params })
+  },
+  { deep: true }
+)
+
+const handleSearch = async (query: string) => {
+  store.commit('x/search/setQuery', query)
+  store.commit('x/url/setQuery', query)
+  store.commit('x/search/setPage', 1) // Reset to page 1
+  store.commit('x/url/setPage', 1)
+  await store.dispatch('x/search/fetchAndSaveSearchResponse')
+}
+
+const handleFilterChange = async (filters: Filter[]) => {
+  store.commit('x/url/setFilters', filters)
+  store.commit('x/search/setPage', 1)
+  store.commit('x/url/setPage', 1)
+  await store.dispatch('x/search/fetchAndSaveSearchResponse')
+}
+
+const handlePageChange = async (page: number) => {
+  store.commit('x/search/setPage', page)
+  store.commit('x/url/setPage', page)
+  await store.dispatch('x/search/fetchAndSaveSearchResponse')
+  
+  // Scroll to top
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+</script>
+```
+
+### Shareable URLs
+
+```typescript
+// Generate shareable URL for current search
+function getShareableUrl(): string {
+  const urlParams = store.getters['x/url/urlParams']
+  const url = new URL(window.location.href)
+  
+  // Clear existing params
+  url.search = ''
+  
+  // Add current state
+  Object.entries(urlParams).forEach(([key, value]) => {
+    if (Array.isArray(value)) {
+      value.forEach(v => url.searchParams.append(key, String(v)))
+    } else if (value) {
+      url.searchParams.set(key, String(value))
+    }
+  })
+  
+  return url.toString()
+}
+
+// Copy to clipboard
+async function shareSearch() {
+  const url = getShareableUrl()
+  await navigator.clipboard.writeText(url)
+  // Show success message
+}
+```
+
+### Deep Linking
+
+```typescript
+// Create deep link to specific search
+function createSearchLink(
+  query: string,
+  filters?: string[],
+  page?: number,
+  sort?: string
+): string {
+  const params = new URLSearchParams()
+  
+  if (query) params.set('query', query)
+  if (page && page > 1) params.set('page', String(page))
+  if (sort) params.set('sort', sort)
+  if (filters?.length) {
+    filters.forEach(f => params.append('filter', f))
+  }
+  
+  return `/search?${params.toString()}`
+}
+
+// Usage
+const link = createSearchLink(
+  'running shoes',
+  ['brand:nike', 'color:red'],
+  1,
+  'price:asc'
+)
+// Result: /search?query=running+shoes&filter=brand:nike&filter=color:red&sort=price:asc
+```
+
+### Extra Parameters
+
+```typescript
+// Preserve custom parameters from initial URL
+const extraParams = route.query.utm_source ? {
+  utm_source: route.query.utm_source,
+  utm_campaign: route.query.utm_campaign
+} : {}
+
+store.commit('x/url/setInitialExtraParams', extraParams)
+
+// Include in all URL updates
+watch(
+  () => store.getters['x/url/urlParams'],
+  (params) => {
+    router.replace({
+      query: {
+        ...params,
+        ...store.state.x.url.initialExtraParams
+      }
+    })
+  }
+)
+```
+
+### Scroll Position
+
+```typescript
+// Save scroll position to URL
+function saveScrollPosition(elementId: string) {
+  store.commit('x/url/setScroll', elementId)
+}
+
+// Restore scroll position from URL
+function restoreScrollPosition() {
+  const scrollId = store.state.x.url.scroll
+  if (scrollId) {
+    const element = document.getElementById(scrollId)
+    element?.scrollIntoView({ behavior: 'smooth' })
+  }
+}
+
+// Usage
+onMounted(() => {
+  restoreScrollPosition()
+})
+```
+
+## URL Encoding
+
+The module handles URL encoding automatically:
+
+```typescript
+// Query with spaces and special characters
+const query = "men's shoes & boots"
+store.commit('x/url/setQuery', query)
+// URL: ?query=men%27s+shoes+%26+boots
+
+// Array parameters
+const filters = ['brand:nike', 'price:[0 TO 100]']
+store.commit('x/url/setFilters', filters.map(id => ({ id })))
+// URL: ?filter=brand:nike&filter=price:[0%20TO%20100]
+```
+
+## Related Modules
+
+- [Search Module](/api/modules/search) - Main search state to sync
+- [Facets Module](/api/modules/facets) - Filter state to sync
+- [History Queries Module](/api/modules/history-queries) - Can use URL params
+
+## Type Reference
+
+Source: `/home/daytona/workspace/source/packages/x-components/src/x-modules/url/store/module.ts:1`
+
+## Resources
+
+<CardGroup cols={2}>
+  <Card title="Vue Router" icon="route" href="https://router.vuejs.org">
+    Learn about Vue Router integration
+  </Card>
+  <Card title="Search Module" icon="magnifying-glass" href="/api/modules/search">
+    Core search state management
+  </Card>
+</CardGroup>

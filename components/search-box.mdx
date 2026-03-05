@@ -1,0 +1,152 @@
+---
+title: "SearchInput"
+description: "A search input component that allows users to type and submit search queries"
+---
+
+## Overview
+
+The `SearchInput` component renders an input field that allows users to type a search query. It handles user interactions, emits relevant events, and integrates seamlessly with other search components in the Interface X library.
+
+## Installation
+
+Import the `SearchInput` component from the search-box module:
+
+```javascript
+import { SearchInput } from '@empathyco/x-components/search-box'
+```
+
+## Props
+
+<ParamField path="maxLength" type="number" default="64">
+  Maximum characters allowed in the search input.
+</ParamField>
+
+<ParamField path="autofocus" type="boolean" default="true">
+  Enables automatic focus when the search field is rendered.
+</ParamField>
+
+<ParamField path="instant" type="boolean" default="true">
+  Enables auto-accept query after debounce period.
+</ParamField>
+
+<ParamField path="instantDebounceInMs" type="number" default="500">
+  Debounce time in milliseconds for the instant search feature.
+</ParamField>
+
+## Events
+
+The component emits the following events:
+
+- **`UserClickedSearchBox`** - Emitted when the user clicks the search input
+- **`UserBlurredSearchBox`** - Emitted when the search box loses focus
+- **`UserFocusedSearchBox`** - Emitted when the search box gains focus
+- **`UserIsTypingAQuery`** - Emitted when the user types or pastes into the search box
+- **`UserPressedEnterKey`** - Emitted when the user presses Enter
+- **`UserPressedArrowKey`** - Emitted when the user presses an arrow key
+- **`UserAcceptedAQuery`** - Emitted when a query is accepted (Enter key or after debounce)
+- **`UserHoveredInSearchBox`** - Emitted when the search box is hovered
+- **`UserHoveredOutSearchBox`** - Emitted when hover leaves the search box
+
+## Basic Usage
+
+Here's a simple example of using the SearchInput component:
+
+```vue
+<template>
+  <SearchInput />
+</template>
+
+<script setup>
+import { SearchInput } from '@empathyco/x-components/search-box'
+</script>
+```
+
+## Customized Example
+
+Customize the behavior with props:
+
+```vue
+<template>
+  <SearchInput 
+    :maxLength="100" 
+    :autofocus="false" 
+    :instant="true" 
+    :instantDebounceInMs="1000" 
+  />
+</template>
+
+<script setup>
+import { SearchInput } from '@empathyco/x-components/search-box'
+</script>
+```
+
+## Complete Search Box
+
+Combine with other components for a full search experience:
+
+```vue
+<template>
+  <div class="search-container">
+    <SearchInput />
+    <ClearSearchInput>
+      <img src="/assets/icons/cross.svg" />
+    </ClearSearchInput>
+    <SearchButton>Search</SearchButton>
+  </div>
+</template>
+
+<script setup>
+import { SearchInput, ClearSearchInput, SearchButton } from '@empathyco/x-components/search-box'
+</script>
+```
+
+## Handling Events
+
+Listen to events to create interactive experiences:
+
+```vue
+<template>
+  <div>
+    <SearchInput
+      @UserPressedEnterKey="handleEnter"
+      @UserFocusedSearchBox="handleFocus"
+      @UserIsTypingAQuery="handleTyping"
+    />
+    <p>Status: {{ status }}</p>
+  </div>
+</template>
+
+<script setup>
+import { SearchInput } from '@empathyco/x-components/search-box'
+import { ref } from 'vue'
+
+const status = ref('idle')
+
+const handleEnter = (query) => {
+  status.value = `Searching for: ${query}`
+}
+
+const handleFocus = () => {
+  status.value = 'focused'
+}
+
+const handleTyping = (query) => {
+  status.value = 'typing'
+}
+</script>
+```
+
+<Note>
+  The SearchInput component automatically prevents special characters like `<` and `>` from being entered.
+</Note>
+
+## Related Components
+
+<CardGroup cols={2}>
+  <Card title="Search Module" icon="magnifying-glass" href="/api/modules/search">
+    Search module API reference
+  </Card>
+  <Card title="QuerySuggestions" icon="list" href="/components/query-suggestions">
+    Display autocomplete suggestions
+  </Card>
+</CardGroup>

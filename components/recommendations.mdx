@@ -1,0 +1,186 @@
+---
+title: "Recommendations"
+description: "Display product recommendations based on top clicked items from your search service"
+---
+
+## Overview
+
+The `Recommendations` component renders a list of recommended products from your search service's topclicked data. It's perfect for showcasing popular or trending products to guide users toward items they're likely to purchase.
+
+<Warning>
+  **Backend service required**: To use this component, the Topclicked service must be implemented in your search API.
+</Warning>
+
+## When to Use
+
+Use the Recommendations component to:
+
+- Display trending or popular products on landing pages
+- Show recommended items in a carousel or grid
+- Guide users toward high-performing products
+- Fill empty states with relevant suggestions
+
+## Installation
+
+Import the component from the recommendations module:
+
+```javascript
+import { Recommendations } from '@empathyco/x-components/recommendations'
+```
+
+## Basic Usage
+
+The simplest implementation uses the default slot to customize how each recommendation is displayed:
+
+```vue
+<template>
+  <Recommendations v-slot="{ recommendation }">
+    <BaseResultLink :result="recommendation" class="x-recommendations__link">
+      <img
+        :src="recommendation.images[0]"
+        :alt="recommendation.name"
+        class="x-recommendations__image"
+      />
+      <span class="x-recommendations__title">{{ recommendation.name }}</span>
+    </BaseResultLink>
+    <BaseResultAddToCart :result="recommendation">Add to cart</BaseResultAddToCart>
+  </Recommendations>
+</template>
+
+<script setup>
+import { Recommendations } from '@empathyco/x-components/recommendations'
+import { BaseResultLink, BaseResultAddToCart } from '@empathyco/x-components'
+</script>
+```
+
+## Props
+
+<ParamField path="animation" type="Vue Component" default="'ul'">
+  Animation component that will be used to animate the recommendations. Pass a Vue animation component to add entrance effects.
+</ParamField>
+
+<ParamField path="maxItemsToRender" type="number" default="undefined">
+  Number of recommendations to be rendered. If not specified, all available recommendations from the state will be displayed.
+</ParamField>
+
+## Slots
+
+### Default Slot
+
+Customize the content of each recommendation item.
+
+**Slot Props:**
+- `recommendation` (Result) - The recommendation data object containing product information
+
+```vue
+<Recommendations v-slot="{ recommendation }">
+  <!-- Your custom recommendation template -->
+</Recommendations>
+```
+
+### Layout Slot
+
+Provide a completely custom layout for the entire recommendations list.
+
+**Slot Props:**
+- `recommendations` (Result[]) - Array of all recommendations
+- `animation` (Vue Component) - The animation component prop
+
+```vue
+<Recommendations v-slot:layout="{ recommendations }">
+  <div class="custom-layout">
+    <article
+      v-for="recommendation in recommendations"
+      :key="recommendation.id"
+    >
+      <!-- Custom recommendation item -->
+    </article>
+  </div>
+</Recommendations>
+```
+
+## Events
+
+The Recommendations component doesn't emit events directly, but it makes child components like `BaseResultLink` emit additional events:
+
+- **UserClickedARecommendation**: Emitted when a user clicks on a recommendation link. The event payload contains the recommendation result data.
+
+## Examples
+
+### With Animation
+
+Add smooth entrance animations to recommendations:
+
+```vue
+<template>
+  <Recommendations
+    v-slot="{ recommendation }"
+    :maxItemsToRender="4"
+    :animation="StaggeredFadeAndSlide"
+  >
+    <BaseResultLink :result="recommendation" class="x-recommendations__link">
+      <img
+        :src="recommendation.images[0]"
+        :alt="recommendation.name"
+        class="x-recommendations__image"
+      />
+      <span class="x-recommendations__title">{{ recommendation.name }}</span>
+    </BaseResultLink>
+    <BaseResultAddToCart :result="recommendation">Add to cart</BaseResultAddToCart>
+  </Recommendations>
+</template>
+
+<script setup>
+import { Recommendations } from '@empathyco/x-components/recommendations'
+import { BaseResultLink, BaseResultAddToCart } from '@empathyco/x-components'
+import StaggeredFadeAndSlide from '@empathyco/x-components/animations/staggered-fade-and-slide.vue'
+</script>
+```
+
+### Custom Layout
+
+Build your own layout structure using the layout slot:
+
+```vue
+<template>
+  <Recommendations v-slot:layout="{ recommendations }">
+    <div class="x-recommendations-grid">
+      <article
+        class="x-recommendations-item"
+        v-for="recommendation in recommendations"
+        :key="recommendation.id"
+      >
+        <BaseResultLink :result="recommendation">
+          <img
+            :src="recommendation.images[0]"
+            :alt="recommendation.name"
+          />
+          <h3>{{ recommendation.name }}</h3>
+          <p class="price">{{ recommendation.price }}</p>
+        </BaseResultLink>
+      </article>
+    </div>
+  </Recommendations>
+</template>
+
+<script setup>
+import { Recommendations } from '@empathyco/x-components/recommendations'
+import { BaseResultLink } from '@empathyco/x-components'
+</script>
+```
+
+## Integration Tips
+
+<Tip>
+  Use `BaseResultLink` and `BaseResultAddToCart` components within your recommendation template. These base components provide automatic integration with other modules like tagging.
+</Tip>
+
+<Note>
+  The recommendations data is automatically fetched from your search service's topclicked endpoint. Make sure your adapter is configured correctly to retrieve this data.
+</Note>
+
+## Related Components
+
+- [Popular Searches](/components/popular-searches) - Display trending search queries
+- [Next Queries](/components/next-queries) - Show related query suggestions
+- [Base Components](/components/base-components) - Foundational UI components

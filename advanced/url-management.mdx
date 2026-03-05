@@ -1,0 +1,300 @@
+---
+title: URL State Management
+description: Manage browser URL state to preserve search parameters across page reloads and navigation
+---
+
+## Overview
+
+The URL module synchronizes your search interface state with the browser's URL, enabling:
+
+- State persistence across page reloads
+- Browser history navigation (back/forward buttons)
+- Shareable search URLs
+- SEO-friendly URLs
+
+## When to Use
+
+Use URL state management when you need to:
+
+- Preserve search state when users refresh the page
+- Support browser back/forward navigation
+- Enable sharing of search results via URL
+- Track search parameters for analytics
+- Build SEO-friendly search pages
+
+## Configuration and Setup
+
+### Basic Usage
+
+Add the `UrlHandler` component to your application. This component manages URL synchronization automatically:
+
+```vue
+<template>
+  <UrlHandler />
+</template>
+
+<script setup>
+import { UrlHandler } from '@empathyco/x-components/url'
+</script>
+```
+
+### Custom URL Parameter Names
+
+You can customize the URL parameter names by passing props to the `UrlHandler` component:
+
+```vue
+<template>
+  <UrlHandler
+    query="q"
+    page="p"
+    filter="f"
+    sort="s"
+  />
+</template>
+
+<script setup>
+import { UrlHandler } from '@empathyco/x-components/url'
+</script>
+```
+
+This configuration maps:
+- `query` → `q`
+- `page` → `p`
+- `filter` → `f`
+- `sort` → `s`
+
+The resulting URL will look like: `?q=shoes&p=2&f=brand:nike&s=price:asc`
+
+### Managing Extra Parameters
+
+You can include custom parameters in the URL by adding them as props:
+
+```vue
+<template>
+  <UrlHandler
+    query="q"
+    campaign="utm_campaign"
+    source="utm_source"
+  />
+</template>
+```
+
+## API Reference
+
+### UrlHandler Component
+
+The main component for URL state management.
+
+**Props:**
+- Any attribute you pass will be used as a URL parameter mapping
+- The prop name is the internal parameter name
+- The prop value (if string) is the URL parameter name
+
+**Events Emitted:**
+- `ParamsLoadedFromUrl` - Emitted when URL parameters are loaded on page load
+- `ExtraParamsLoadedFromUrl` - Emitted when extra parameters are detected in the URL
+- `UserOpenXProgrammatically` - Emitted when a query is detected in the URL on page load
+
+### Store State
+
+```typescript
+interface UrlState {
+  query: string
+  filter: string[]
+  page: number
+  sort: string
+  scroll: string
+  relatedTags: RelatedTag[]
+  prompt: number
+  initialExtraParams: Dictionary<unknown>
+}
+```
+
+### Store Getters
+
+```typescript
+interface UrlGetters {
+  /** The current params in the url */
+  urlParams: UrlParams
+}
+```
+
+### Store Mutations
+
+```typescript
+interface UrlMutations {
+  setParams: (params: Partial<UrlParams>) => void
+  setRelatedTags: (relatedTags: RelatedTag[]) => void
+  setPrompt: (prompt: number) => void
+  setFilters: (filters: Filter[]) => void
+  setPage: (page: number) => void
+  setScroll: (scroll: string) => void
+  setSort: (sort: string) => void
+  setQuery: (query: string) => void
+  setInitialExtraParams: (extraParams: Dictionary<unknown>) => void
+}
+```
+
+### Events
+
+```typescript
+interface UrlXEvents {
+  /** URL parameters loaded from browser URL */
+  ParamsLoadedFromUrl: UrlParams
+  
+  /** Extra parameters loaded from URL */
+  ExtraParamsLoadedFromUrl: Dictionary<unknown>
+  
+  /** URL state updated (push to history) */
+  PushableUrlStateUpdated: UrlParams
+  
+  /** URL state updated (replace history) */
+  ReplaceableUrlStateUpdated: UrlParams
+}
+```
+
+## Examples
+
+### Read URL Parameters on Load
+
+The URL module automatically reads parameters when the page loads. Listen to the `ParamsLoadedFromUrl` event:
+
+```vue
+<template>
+  <UrlHandler />
+</template>
+
+<script setup>
+import { UrlHandler } from '@empathyco/x-components/url'
+import { use$x } from '@empathyco/x-components'
+
+const $x = use$x()
+
+$x.on('ParamsLoadedFromUrl').subscribe((params) => {
+  console.log('Loaded params:', params)
+  // { query: 'shoes', page: 2, filter: ['brand:nike'] }
+})
+</script>
+```
+
+### Programmatically Update URL
+
+You can update URL parameters by dispatching events or committing mutations:
+
+```vue
+<script setup>
+import { useState } from '@empathyco/x-components'
+import { use$x } from '@empathyco/x-components'
+
+const $x = use$x()
+
+// Option 1: Emit an event that triggers URL update
+$x.emit('UserAcceptedAQuery', 'new search query')
+
+// Option 2: Commit mutation directly
+const { commit } = useState('url')
+commit('setQuery', 'new search query')
+</script>
+```
+
+### Building SEO-Friendly URLs
+
+The URL module automatically:
+- Sorts parameters alphabetically for consistent URLs
+- Properly encodes special characters
+- Only includes parameters when a query is present
+- Normalizes spaces to `%20` instead of `+`
+
+```vue
+<template>
+  <UrlHandler query="q" filter="f" />
+</template>
+```
+
+Result: `?f=brand:nike&f=color:blue&q=running+shoes` becomes `?f=brand:nike&f=color:blue&q=running%20shoes`
+
+### History Management
+
+The module uses two different events for history management:
+
+- `PushableUrlStateUpdated` - Creates a new history entry (push)
+- `ReplaceableUrlStateUpdated` - Replaces current history entry (replace)
+
+Most state changes use `PushableUrlStateUpdated` to allow back/forward navigation.
+
+### Handling Browser Navigation
+
+The `UrlHandler` listens to browser `popstate` events automatically:
+
+```vue
+<template>
+  <UrlHandler />
+</template>
+```
+
+When users click back/forward:
+1. The `popstate` event is captured
+2. URL parameters are parsed
+3. `ParamsLoadedFromUrl` event is emitted
+4. Your search interface updates accordingly
+
+## Advanced Usage
+
+### SPA Mode
+
+For single-page applications, the URL module detects SPA navigation:
+
+```typescript
+// Provided via snippetConfig
+const snippetConfig = {
+  isSpa: true
+}
+```
+
+This enables proper state detection when navigating from product pages.
+
+### Back-Forward Cache Detection
+
+The module handles browser back-forward cache (bfcache):
+
+```vue
+<template>
+  <!-- Listens to pageshow event for bfcache detection -->
+  <UrlHandler />
+</template>
+```
+
+When a page is restored from bfcache, the URL state is properly reset and reloaded.
+
+### Custom Wiring
+
+You can wire custom events to URL mutations:
+
+```typescript
+import { createWiring } from '@empathyco/x-components'
+import { setUrlQuery, setUrlPage } from '@empathyco/x-components/url'
+
+const customWiring = createWiring({
+  MyCustomQueryEvent: {
+    setUrlQuery
+  },
+  MyCustomPaginationEvent: {
+    setUrlPage
+  }
+})
+```
+
+## Best Practices
+
+1. **Use short parameter names** for cleaner URLs: `q` instead of `query`, `p` instead of `page`
+2. **Only store essential state** in the URL - don't include UI-specific state
+3. **Validate URL parameters** on load to handle malformed or invalid values
+4. **Consider SEO impact** - search engines will index your URL parameters
+5. **Test browser navigation** - ensure back/forward buttons work correctly
+6. **Handle missing parameters** - provide defaults when parameters are absent
+
+## Related Resources
+
+- [Search Module](/api/modules/search)
+- [Facets Module](/api/modules/facets)
+- [Event System](/concepts/event-system)

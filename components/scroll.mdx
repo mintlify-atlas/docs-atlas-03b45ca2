@@ -1,0 +1,410 @@
+---
+title: Scroll Components
+description: Components for managing and tracking scroll behavior
+---
+
+Interface X provides scroll management components that track scroll position, direction, and boundaries, enabling features like infinite scroll and scroll-based UI updates.
+
+## BaseScroll
+
+A component that wraps scrollable content and emits events based on scroll position and direction.
+
+### Props
+
+<ParamField path="distanceToBottom" type="number" default="100">
+  Distance in pixels from the bottom that triggers the `scroll:almost-at-end` event.
+</ParamField>
+
+<ParamField path="firstElementThresholdPx" type="number" default="100">
+  Vertical distance threshold to consider the first element still visible.
+</ParamField>
+
+<ParamField path="throttleMs" type="number" default="100">
+  Throttle duration in milliseconds for scroll events. Higher values improve performance but reduce precision.
+</ParamField>
+
+<ParamField path="resetOnChange" type="boolean" default="true">
+  Whether to reset scroll position to top when specified events are emitted.
+</ParamField>
+
+<ParamField path="resetOn" type="XEvent | XEvent[]" default="['SearchBoxQueryChanged', 'SortChanged', 'SelectedFiltersChanged', 'SelectedFiltersForRequestChanged', 'SelectedRelatedTagsChanged', 'UserChangedExtraParams']">
+  List of events that trigger scroll reset when `resetOnChange` is true.
+</ParamField>
+
+### Events
+
+<ParamField path="scroll" type="number">
+  Emitted on scroll with the scroll position in pixels from the top.
+</ParamField>
+
+<ParamField path="scroll:at-start" type="void">
+  Emitted when the scroll position reaches the top.
+</ParamField>
+
+<ParamField path="scroll:almost-at-end" type="number">
+  Emitted when the user is close to the bottom (based on `distanceToBottom` prop).
+</ParamField>
+
+<ParamField path="scroll:at-end" type="void">
+  Emitted when the user reaches the bottom.
+</ParamField>
+
+<ParamField path="scroll:direction-change" type="'UP' | 'DOWN'">
+  Emitted when the scroll direction changes.
+</ParamField>
+
+### Basic Usage
+
+```vue
+<template>
+  <BaseScroll
+    @scroll="onScroll"
+    @scroll:at-start="onAtStart"
+    @scroll:almost-at-end="onAlmostAtEnd"
+    @scroll:at-end="onAtEnd"
+    @scroll:direction-change="onDirectionChange"
+  >
+    <div class="content">
+      <!-- Your scrollable content -->
+    </div>
+  </BaseScroll>
+</template>
+
+<script setup>
+import { BaseScroll } from '@empathyco/x-components'
+
+function onScroll(position) {
+  console.log('Scrolled to:', position)
+}
+
+function onAtStart() {
+  console.log('At top')
+}
+
+function onAlmostAtEnd(distance) {
+  console.log('Almost at bottom, distance:', distance)
+}
+
+function onAtEnd() {
+  console.log('At bottom')
+}
+
+function onDirectionChange(direction) {
+  console.log('Direction changed to:', direction)
+}
+</script>
+```
+
+## Infinite Scroll Pattern
+
+Implement infinite scroll by loading more items when approaching the end:
+
+```vue
+<template>
+  <BaseScroll
+    :distanceToBottom="200"
+    @scroll:almost-at-end="loadMore"
+  >
+    <div class="results">
+      <ProductCard
+        v-for="product in products"
+        :key="product.id"
+        :product="product"
+      />
+    </div>
+    <div v-if="loading" class="loading">Loading more...</div>
+  </BaseScroll>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+import { BaseScroll } from '@empathyco/x-components'
+import { useSearch } from '@empathyco/x-components'
+
+const products = ref([])
+const loading = ref(false)
+const page = ref(1)
+
+async function loadMore() {
+  if (loading.value) return
+  
+  loading.value = true
+  page.value++
+  
+  const newProducts = await fetchProducts(page.value)
+  products.value.push(...newProducts)
+  
+  loading.value = false
+}
+</script>
+```
+
+## Scroll-based UI Updates
+
+Show/hide UI elements based on scroll position:
+
+```vue
+<template>
+  <div>
+    <transition name="fade">
+      <button v-if="showScrollTop" @click="scrollToTop" class="scroll-top-button">
+        ↑ Back to Top
+      </button>
+    </transition>
+    
+    <BaseScroll
+      @scroll="onScroll"
+      @scroll:direction-change="onDirectionChange"
+    >
+      <div class="content">
+        <!-- Your content -->
+      </div>
+    </BaseScroll>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+import { BaseScroll } from '@empathyco/x-components'
+
+const showScrollTop = ref(false)
+const scrollDirection = ref('DOWN')
+
+function onScroll(position) {
+  // Show button after scrolling 300px down
+  showScrollTop.value = position > 300
+}
+
+function onDirectionChange(direction) {
+  scrollDirection.value = direction
+}
+
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+</script>
+```
+
+## Controlling Scroll Reset
+
+### Disable automatic reset
+
+```vue
+<template>
+  <BaseScroll :resetOnChange="false">
+    <div class="content">
+      <!-- Scroll position will be maintained across searches -->
+    </div>
+  </BaseScroll>
+</template>
+```
+
+### Custom reset events
+
+```vue
+<template>
+  <BaseScroll :resetOn="['UserAcceptedAQuery', 'UserClearedQuery']">
+    <div class="content">
+      <!-- Only reset on specific events -->
+    </div>
+  </BaseScroll>
+</template>
+```
+
+### No automatic reset
+
+```vue
+<template>
+  <BaseScroll :resetOn="[]">
+    <div class="content">
+      <!-- Never reset automatically -->
+    </div>
+  </BaseScroll>
+</template>
+```
+
+## Performance Optimization
+
+### Adjusting throttle
+
+Increase throttle for better performance with less precision:
+
+```vue
+<template>
+  <BaseScroll :throttleMs="500">
+    <!-- Scroll events fire every 500ms max -->
+  </BaseScroll>
+</template>
+```
+
+### Adjusting distance threshold
+
+Load content earlier by increasing the distance:
+
+```vue
+<template>
+  <BaseScroll :distanceToBottom="500" @scroll:almost-at-end="loadMore">
+    <!-- Triggers 500px before reaching bottom -->
+  </BaseScroll>
+</template>
+```
+
+## Sticky Headers Pattern
+
+Combine with scroll tracking for sticky behavior:
+
+```vue
+<template>
+  <div>
+    <header :class="{ 'sticky': isScrolled }">
+      <!-- Header content -->
+    </header>
+    
+    <BaseScroll @scroll="onScroll">
+      <div class="content">
+        <!-- Main content -->
+      </div>
+    </BaseScroll>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+import { BaseScroll } from '@empathyco/x-components'
+
+const isScrolled = ref(false)
+
+function onScroll(position) {
+  isScrolled.value = position > 100
+}
+</script>
+
+<style>
+header {
+  transition: all 0.3s ease;
+}
+
+header.sticky {
+  position: fixed;
+  top: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+</style>
+```
+
+## Progress Indicator
+
+Show scroll progress:
+
+```vue
+<template>
+  <div>
+    <div class="progress-bar" :style="{ width: scrollProgress + '%' }" />
+    
+    <BaseScroll @scroll="updateProgress">
+      <div ref="contentRef" class="content">
+        <!-- Your content -->
+      </div>
+    </BaseScroll>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+import { BaseScroll } from '@empathyco/x-components'
+
+const scrollProgress = ref(0)
+const contentRef = ref(null)
+
+function updateProgress(position) {
+  if (!contentRef.value) return
+  
+  const scrollHeight = contentRef.value.scrollHeight
+  const clientHeight = contentRef.value.clientHeight
+  const maxScroll = scrollHeight - clientHeight
+  
+  scrollProgress.value = (position / maxScroll) * 100
+}
+</script>
+
+<style>
+.progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  background: #007bff;
+  transition: width 0.2s ease;
+  z-index: 1000;
+}
+</style>
+```
+
+## Best Practices
+
+1. **Throttle appropriately**: Balance between responsiveness and performance
+2. **Use distance thresholds**: Start loading content before users reach the end
+3. **Handle loading states**: Prevent duplicate requests during infinite scroll
+4. **Reset strategically**: Only reset scroll when it improves UX
+5. **Consider accessibility**: Ensure keyboard navigation still works
+6. **Test on mobile**: Touch scrolling behaves differently than mouse
+
+## Common Patterns
+
+### Load more button fallback
+
+```vue
+<template>
+  <BaseScroll @scroll:almost-at-end="loadMore">
+    <div class="results">
+      <ProductCard v-for="product in products" :key="product.id" :product="product" />
+    </div>
+    
+    <button v-if="hasMore && !autoLoad" @click="loadMore">
+      Load More
+    </button>
+  </BaseScroll>
+</template>
+
+<script setup>
+const autoLoad = ref(true)
+const hasMore = ref(true)
+
+// Disable auto-load on error
+function handleError() {
+  autoLoad.value = false
+}
+</script>
+```
+
+### Scroll to element
+
+```vue
+<template>
+  <BaseScroll ref="scrollRef">
+    <div id="section-1">Section 1</div>
+    <div id="section-2">Section 2</div>
+    <div id="section-3">Section 3</div>
+  </BaseScroll>
+  
+  <nav>
+    <button @click="scrollToSection('section-1')">Section 1</button>
+    <button @click="scrollToSection('section-2')">Section 2</button>
+    <button @click="scrollToSection('section-3')">Section 3</button>
+  </nav>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+import { BaseScroll } from '@empathyco/x-components'
+
+const scrollRef = ref(null)
+
+function scrollToSection(id) {
+  const element = document.getElementById(id)
+  if (element) {
+    element.scrollIntoView({ behavior: 'smooth' })
+  }
+}
+</script>
+```

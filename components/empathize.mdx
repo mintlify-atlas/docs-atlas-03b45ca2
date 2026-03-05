@@ -1,0 +1,513 @@
+---
+title: Empathize
+description: Create a predictive search layer that displays suggestions as users type
+---
+
+The Empathize component creates a predictive layer that opens and closes based on user interactions with the search box. It serves as a container for displaying query suggestions, popular searches, history queries, and other predictive content.
+
+## Overview
+
+Empathize is the foundation for building intelligent search experiences. It automatically manages visibility based on configurable events and provides smooth transitions between open and closed states. The component is designed to be flexible, allowing you to compose various suggestion types within it.
+
+### Key Features
+
+- **Event-Driven**: Opens and closes based on customizable X events
+- **Focus Management**: Handles focus states intelligently to maintain UX
+- **Animation Support**: Built-in animation prop for smooth transitions
+- **Content Detection**: Can trigger fallback search when no content available
+- **Flexible Composition**: Acts as a container for any suggestion components
+- **Accessibility**: Manages ARIA attributes and keyboard interactions
+
+## Component API
+
+### Props
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `eventsToOpenEmpathize` | `XEvent[]` | `['UserFocusedSearchBox', 'UserIsTypingAQuery', 'UserClickedSearchBox']` | Events that trigger opening |
+| `eventsToCloseEmpathize` | `XEvent[]` | `['UserClosedEmpathize', 'UserSelectedASuggestion', 'UserPressedEnterKey', 'UserBlurredSearchBox']` | Events that trigger closing |
+| `animation` | `Vue Component` | `NoAnimation` | Animation component for transitions |
+| `hasContent` | `boolean` | `true` | Whether empathize has displayable content |
+| `searchAndCloseOnNoContent` | `boolean` | `false` | Trigger search and close when no content |
+| `searchAndCloseDebounceInMs` | `number` | `1000` | Debounce time for no-content fallback |
+
+### Events
+
+The component emits the following X events:
+
+- **`EmpathizeOpened`**: Emitted when empathize opens (has content and isOpen = true)
+  - Payload: `void`
+  - Metadata: Contains module name and target element
+
+- **`EmpathizeClosed`**: Emitted when empathize closes
+  - Payload: `void`
+  - Metadata: Contains module name and target element
+
+- **`UserClosedEmpathize`**: User manually closed empathize
+  - Payload: `void`
+
+### Slots
+
+- **`default`** (Required): The content to display inside the empathize layer
+  - This is where you place your suggestion components
+
+## Configuration
+
+The Empathize module has minimal configuration as it primarily acts as a container:
+
+```typescript
+import { InstallXOptions } from '@empathyco/x-components'
+
+const installXOptions: InstallXOptions = {
+  xModules: {
+    empathize: {
+      config: {
+        // Currently no configuration options
+      }
+    }
+  }
+}
+```
+
+## Usage Examples
+
+### Basic Implementation
+
+The simplest empathize setup with multiple suggestion types:
+
+```vue
+<template>
+  <div>
+    <SearchInput />
+    <Empathize>
+      <BaseKeyboardNavigation>
+        <QuerySuggestions />
+        <PopularSearches />
+        <HistoryQueries />
+      </BaseKeyboardNavigation>
+    </Empathize>
+  </div>
+</template>
+
+<script setup>
+import { SearchInput } from '@empathyco/x-components/search-box'
+import { Empathize } from '@empathyco/x-components/empathize'
+import { BaseKeyboardNavigation } from '@empathyco/x-components'
+import { QuerySuggestions } from '@empathyco/x-components/query-suggestions'
+import { PopularSearches } from '@empathyco/x-components/popular-searches'
+import { HistoryQueries } from '@empathyco/x-components/history-queries'
+</script>
+```
+
+### With Animation
+
+Add smooth transitions when opening and closing:
+
+```vue
+<template>
+  <Empathize :animation="CollapseFromTop">
+    <QuerySuggestions />
+    <PopularSearches />
+  </Empathize>
+</template>
+
+<script setup>
+import { Empathize } from '@empathyco/x-components/empathize'
+import { QuerySuggestions } from '@empathyco/x-components/query-suggestions'
+import { PopularSearches } from '@empathyco/x-components/popular-searches'
+import CollapseFromTop from './animations/collapse-from-top.vue'
+</script>
+```
+
+### Custom Open/Close Events
+
+Control when empathize opens and closes with custom events:
+
+```vue
+<template>
+  <Empathize
+    :events-to-open-empathize="['UserFocusedSearchBox', 'UserClickedSearchBox']"
+    :events-to-close-empathize="['UserSelectedASuggestion', 'UserPressedEnterKey']"
+  >
+    <QuerySuggestions />
+    <HistoryQueries />
+  </Empathize>
+</template>
+
+<script setup>
+import { Empathize } from '@empathyco/x-components/empathize'
+import { QuerySuggestions } from '@empathyco/x-components/query-suggestions'
+import { HistoryQueries } from '@empathyco/x-components/history-queries'
+</script>
+```
+
+### With Fallback Search
+
+Automatically trigger a search when empathize has no content to show:
+
+```vue
+<template>
+  <Empathize
+    :animation="FadeAndSlide"
+    :has-content="showEmpathize"
+    :search-and-close-debounce-in-ms="500"
+    search-and-close-on-no-content
+  >
+    <BaseKeyboardNavigation>
+      <QuerySuggestions />
+      <PopularSearches />
+      <IdentifierResults />
+    </BaseKeyboardNavigation>
+  </Empathize>
+</template>
+
+<script setup>
+import { Empathize } from '@empathyco/x-components/empathize'
+import { BaseKeyboardNavigation, FadeAndSlide } from '@empathyco/x-components'
+import { QuerySuggestions } from '@empathyco/x-components/query-suggestions'
+import { PopularSearches } from '@empathyco/x-components/popular-searches'
+import { IdentifierResults } from '@empathyco/x-components/identifier-results'
+import { ref, computed } from 'vue'
+
+const querySuggestions = ref([])
+const popularSearches = ref([])
+const identifierResults = ref([])
+
+const showEmpathize = computed(() => {
+  return querySuggestions.value.length > 0 ||
+         popularSearches.value.length > 0 ||
+         identifierResults.value.length > 0
+})
+</script>
+```
+
+### Complex Layout
+
+Create a sophisticated layout with sections and custom styling:
+
+```vue
+<template>
+  <Empathize :animation="CollapseFromTop">
+    <div class="empathize-content">
+      <section class="empathize-section">
+        <h3 class="section-title">Suggestions</h3>
+        <QuerySuggestions :maxItemsToRender="5" />
+      </section>
+      
+      <section class="empathize-section">
+        <h3 class="section-title">Your Recent Searches</h3>
+        <HistoryQueries :maxItemsToRender="3" />
+      </section>
+      
+      <section class="empathize-section">
+        <h3 class="section-title">Trending Now</h3>
+        <PopularSearches :maxItemsToRender="5" />
+      </section>
+    </div>
+  </Empathize>
+</template>
+
+<script setup>
+import { Empathize } from '@empathyco/x-components/empathize'
+import { QuerySuggestions } from '@empathyco/x-components/query-suggestions'
+import { HistoryQueries } from '@empathyco/x-components/history-queries'
+import { PopularSearches } from '@empathyco/x-components/popular-searches'
+import CollapseFromTop from './animations/collapse-from-top.vue'
+</script>
+
+<style scoped>
+.empathize-content {
+  padding: 16px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.empathize-section {
+  margin-bottom: 24px;
+}
+
+.empathize-section:last-child {
+  margin-bottom: 0;
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+</style>
+```
+
+## Integration Patterns
+
+### With Search Box
+
+Empathize works seamlessly with the SearchInput component:
+
+```vue
+<template>
+  <div class="search-container">
+    <SearchInput 
+      @focus="handleSearchFocus"
+      @blur="handleSearchBlur"
+    />
+    <Empathize>
+      <QuerySuggestions />
+      <PopularSearches />
+    </Empathize>
+  </div>
+</template>
+
+<script setup>
+import { SearchInput } from '@empathyco/x-components/search-box'
+import { Empathize } from '@empathyco/x-components/empathize'
+import { QuerySuggestions } from '@empathyco/x-components/query-suggestions'
+import { PopularSearches } from '@empathyco/x-components/popular-searches'
+
+const handleSearchFocus = () => {
+  // Additional custom logic on focus
+}
+
+const handleSearchBlur = () => {
+  // Additional custom logic on blur
+}
+</script>
+```
+
+### Mobile-Optimized
+
+Optimize empathize for mobile devices:
+
+```vue
+<template>
+  <Empathize
+    :events-to-close-empathize="['UserSelectedASuggestion', 'UserPressedEnterKey', 'UserClosedEmpathize']"
+    :animation="SlideFromTop"
+  >
+    <div class="mobile-empathize">
+      <button class="close-button" @click="closeEmpathize">
+        <CloseIcon />
+      </button>
+      <QuerySuggestions :maxItemsToRender="8" />
+      <HistoryQueries :maxItemsToRender="5" />
+    </div>
+  </Empathize>
+</template>
+
+<script setup>
+import { Empathize } from '@empathyco/x-components/empathize'
+import { QuerySuggestions } from '@empathyco/x-components/query-suggestions'
+import { HistoryQueries } from '@empathyco/x-components/history-queries'
+import { use$x } from '@empathyco/x-components'
+import SlideFromTop from './animations/slide-from-top.vue'
+import CloseIcon from './icons/close-icon.vue'
+
+const $x = use$x()
+
+const closeEmpathize = () => {
+  $x.emit('UserClosedEmpathize')
+}
+</script>
+
+<style scoped>
+.mobile-empathize {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: white;
+  padding: 16px;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+.close-button {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  padding: 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+</style>
+```
+
+### With Multiple Panels
+
+Create tabbed or sectioned empathize content:
+
+```vue
+<template>
+  <Empathize>
+    <div class="empathize-tabs">
+      <div class="tabs">
+        <button 
+          v-for="tab in tabs" 
+          :key="tab.id"
+          :class="['tab', { active: activeTab === tab.id }]"
+          @click="activeTab = tab.id"
+        >
+          {{ tab.label }}
+        </button>
+      </div>
+      
+      <div class="tab-content">
+        <QuerySuggestions v-show="activeTab === 'suggestions'" />
+        <HistoryQueries v-show="activeTab === 'history'" />
+        <PopularSearches v-show="activeTab === 'trending'" />
+      </div>
+    </div>
+  </Empathize>
+</template>
+
+<script setup>
+import { Empathize } from '@empathyco/x-components/empathize'
+import { QuerySuggestions } from '@empathyco/x-components/query-suggestions'
+import { HistoryQueries } from '@empathyco/x-components/history-queries'
+import { PopularSearches } from '@empathyco/x-components/popular-searches'
+import { ref } from 'vue'
+
+const activeTab = ref('suggestions')
+
+const tabs = [
+  { id: 'suggestions', label: 'Suggestions' },
+  { id: 'history', label: 'History' },
+  { id: 'trending', label: 'Trending' }
+]
+</script>
+```
+
+## Best Practices
+
+### Content Detection
+
+Always provide reactive `hasContent` when using fallback search:
+
+```vue
+<script setup>
+import { computed } from 'vue'
+import { useState } from '@empathyco/x-components'
+
+const { querySuggestions } = useState('querySuggestions')
+const { popularSearches } = useState('popularSearches')
+const { historyQueries } = useState('historyQueries')
+
+const hasContent = computed(() => {
+  return querySuggestions.value.length > 0 ||
+         popularSearches.value.length > 0 ||
+         historyQueries.value.length > 0
+})
+</script>
+```
+
+### Event Configuration
+
+Choose events that match your UX requirements:
+
+```vue
+<!-- Open on click only, close on selection or escape -->
+<Empathize
+  :events-to-open-empathize="['UserClickedSearchBox']"
+  :events-to-close-empathize="['UserSelectedASuggestion', 'UserPressedEscapeKey']"
+>
+  <!-- content -->
+</Empathize>
+```
+
+### Animation Performance
+
+Use lightweight animations for better performance:
+
+```vue
+<template>
+  <Empathize :animation="FadeAndSlide">
+    <!-- content -->
+  </Empathize>
+</template>
+
+<script setup>
+import { FadeAndSlide } from '@empathyco/x-components'
+// FadeAndSlide is optimized and recommended
+</script>
+```
+
+### Accessibility
+
+Ensure proper focus management:
+
+```vue
+<template>
+  <div class="search-wrapper">
+    <SearchInput 
+      ref="searchInput"
+      aria-expanded="true"
+      aria-controls="empathize-content"
+    />
+    <Empathize>
+      <div id="empathize-content" role="listbox">
+        <QuerySuggestions />
+      </div>
+    </Empathize>
+  </div>
+</template>
+```
+
+## Troubleshooting
+
+### Empathize Not Opening
+
+Check that events are properly configured and emitted:
+
+```vue
+<script setup>
+import { use$x } from '@empathyco/x-components'
+
+const $x = use$x()
+
+// Debug: Log when events fire
+$x.on('UserFocusedSearchBox').subscribe(() => {
+  console.log('Search box focused - empathize should open')
+})
+</script>
+```
+
+### Empathize Closes Unexpectedly
+
+Review close events and ensure focus is managed correctly:
+
+```vue
+<Empathize
+  :events-to-close-empathize="['UserSelectedASuggestion']"
+  @mousedown.prevent
+>
+  <!-- @mousedown.prevent stops blur event on suggestion click -->
+</Empathize>
+```
+
+### Content Not Displaying
+
+Verify that child components have data:
+
+```vue
+<script setup>
+import { useState } from '@empathyco/x-components'
+
+const { querySuggestions } = useState('querySuggestions')
+console.log('Suggestions:', querySuggestions.value)
+</script>
+```
+
+## Related Components
+
+- [Query Suggestions](/components/query-suggestions) - AI-powered query suggestions
+- [Popular Searches](/components/popular-searches) - Trending search queries
+- [History Queries](/components/history-queries) - User search history
+- [Identifier Results](/components/identifier-results) - Product identifier matching
+- [Search Box](/components/search-box) - Search input component
+- [Base Components](/components/base-components) - Foundational UI components

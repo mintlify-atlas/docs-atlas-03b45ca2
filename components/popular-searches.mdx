@@ -1,0 +1,190 @@
+---
+title: "Popular Searches"
+description: "Display trending search queries to help users discover popular content"
+---
+
+## Overview
+
+The `PopularSearches` component renders a list of trending search queries that have been frequently searched by users. These queries may optionally include associated filters to refine the search. It's an effective way to guide users toward popular content and improve search discovery.
+
+## When to Use
+
+Use the PopularSearches component to:
+
+- Display trending searches on empty search states or landing pages
+- Guide users toward popular queries
+- Fill the search experience with relevant suggestions
+- Showcase seasonal or trending search topics
+
+## Installation
+
+Import the component from the popular-searches module:
+
+```javascript
+import { PopularSearches } from '@empathyco/x-components/popular-searches'
+```
+
+## Basic Usage
+
+The simplest implementation displays popular searches with default styling:
+
+```vue
+<template>
+  <PopularSearches />
+</template>
+
+<script setup>
+import { PopularSearches } from '@empathyco/x-components/popular-searches'
+</script>
+```
+
+## Props
+
+This component inherits all props from [Base Components](/components/base-components):
+
+<ParamField path="animation" type="Vue Component" default="'ul'">
+  Animation component that will be used to animate the suggestions. Pass a Vue animation component to add entrance effects.
+</ParamField>
+
+<ParamField path="maxItemsToRender" type="number" default="5">
+  Number of popular searches to be rendered. By default, it limits to 5 suggestions.
+</ParamField>
+
+## Slots
+
+### suggestion Slot
+
+Customize the entire popular search item including the wrapper.
+
+**Slot Props:**
+- `suggestion` (Suggestion) - The popular search suggestion data
+- `index` (number) - The index of the suggestion in the list
+
+```vue
+<PopularSearches>
+  <template #suggestion="{ suggestion }">
+    <PopularSearch :suggestion="suggestion">
+      <template #default="{ suggestion }">
+        <TrendingIcon />
+        <span>{{ suggestion.query }}</span>
+      </template>
+    </PopularSearch>
+    <button>Custom Action</button>
+  </template>
+</PopularSearches>
+```
+
+### suggestion-content Slot
+
+Customize only the content of each popular search, keeping the default wrapper.
+
+**Slot Props:**
+- `suggestion` (Suggestion) - The popular search suggestion data
+- `index` (number) - The index of the suggestion in the list
+
+```vue
+<PopularSearches>
+  <template #suggestion-content="{ suggestion }">
+    <TrendingIcon />
+    <span class="query">{{ suggestion.query }}</span>
+  </template>
+</PopularSearches>
+```
+
+## Events
+
+The component emits events through the event bus when users interact with suggestions:
+
+- **UserSelectedAPopularSearch**: Emitted when a user clicks on a popular search suggestion
+
+## Examples
+
+### With Animation and Limit
+
+Add animations and control the number of displayed items:
+
+```vue
+<template>
+  <PopularSearches :animation="FadeAndSlide" :maxItemsToRender="10" />
+</template>
+
+<script setup>
+import { PopularSearches } from '@empathyco/x-components/popular-searches'
+import FadeAndSlide from '@empathyco/x-components/animations/fade-and-slide.vue'
+</script>
+```
+
+### Custom Content with Icons
+
+Add icons and custom styling to popular search items:
+
+```vue
+<template>
+  <PopularSearches>
+    <template #suggestion-content="{ suggestion }">
+      <TrendingIcon class="trending-icon" />
+      <span class="x-popular-search__query">{{ suggestion.query }}</span>
+    </template>
+  </PopularSearches>
+</template>
+
+<script setup>
+import { PopularSearches } from '@empathyco/x-components/popular-searches'
+import { TrendingIcon } from '@empathyco/x-components'
+</script>
+```
+
+### Fully Custom Item
+
+Create a completely custom popular search item with additional actions:
+
+```vue
+<template>
+  <PopularSearches>
+    <template #suggestion="{ suggestion }">
+      <PopularSearch :suggestion="suggestion">
+        <template #default="{ suggestion }">
+          <TrendingIcon />
+          <span class="x-popular-search__query">{{ suggestion.query }}</span>
+        </template>
+      </PopularSearch>
+      <button class="info-button" @click="showInfo(suggestion)">
+        <InfoIcon />
+      </button>
+    </template>
+  </PopularSearches>
+</template>
+
+<script setup>
+import { PopularSearches, PopularSearch } from '@empathyco/x-components/popular-searches'
+import { TrendingIcon, InfoIcon } from '@empathyco/x-components'
+
+const showInfo = (suggestion) => {
+  console.log('Show info for:', suggestion.query)
+}
+</script>
+```
+
+## Integration Tips
+
+<Tip>
+  Popular searches work great in empty states. Show them when users haven't entered a search query yet to inspire exploration.
+</Tip>
+
+<Note>
+  The popular searches data comes from your search service's analytics. Ensure your API is configured to return trending queries for this component to work.
+</Note>
+
+## Styling
+
+The component uses these CSS classes for styling:
+
+- `.x-popular-searches` - Main container
+- `.x-popular-searches__suggestion` - Individual suggestion wrapper
+- `.x-popular-search__query` - Query text
+
+## Related Components
+
+- [Recommendations](/components/recommendations) - Display recommended products
+- [Next Queries](/components/next-queries) - Show related query suggestions
+- [Query Suggestions](/components/query-suggestions) - Autocomplete suggestions
